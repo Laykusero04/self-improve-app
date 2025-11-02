@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/dashboard/dashboard_bloc.dart';
+import '../bloc/dashboard/dashboard_event.dart';
 import '../widgets/dashboard/financial_health_card.dart';
 import '../widgets/dashboard/goals_summary_card.dart';
 import '../widgets/dashboard/productivity_card.dart';
@@ -9,6 +12,18 @@ import '../widgets/app_drawer.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => DashboardBloc()..add(const DashboardInitialized()),
+      child: const _DashboardView(),
+    );
+  }
+}
+
+class _DashboardView extends StatelessWidget {
+  const _DashboardView();
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +48,7 @@ class DashboardScreen extends StatelessWidget {
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
-          // TODO: Implement refresh logic
+          context.read<DashboardBloc>().add(const DashboardRefreshed());
           await Future.delayed(const Duration(seconds: 1));
         },
         child: SingleChildScrollView(
@@ -41,14 +56,6 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome greeting
-              Text(
-                '👋 Welcome back!',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 24),
 
               // AI Insight of the Day
               Text(

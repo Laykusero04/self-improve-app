@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import '../../bloc/budget/budget_bloc.dart';
+import '../../bloc/budget/budget_event.dart';
+import '../../bloc/budget/budget_state.dart';
+import '../../models/transaction.dart';
+import '../budget/add_transaction_dialog.dart';
 
 class TransactionsListWidget extends StatelessWidget {
   final int? limit;
@@ -10,81 +17,105 @@ class TransactionsListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allTransactions = [
-      // Today
-      TransactionGroup(
-        date: 'Today',
-        transactions: [
-          TransactionData(
-            emoji: '🍔',
-            title: 'Coffee House',
-            category: 'Food',
-            time: '2:30 PM',
-            amount: -5.50,
-            isExpense: true,
-          ),
-          TransactionData(
-            emoji: '💰',
-            title: 'Salary',
-            category: 'Income',
-            time: '9:00 AM',
-            amount: 1500,
-            isExpense: false,
-          ),
-        ],
-      ),
-      // Yesterday
-      TransactionGroup(
-        date: 'Yesterday',
-        transactions: [
-          TransactionData(
-            emoji: '🚗',
-            title: 'Gas Station',
-            category: 'Transport',
-            time: '6:45 PM',
-            amount: -45.00,
-            isExpense: true,
-          ),
-          TransactionData(
-            emoji: '🛒',
-            title: 'Grocery Store',
-            category: 'Shopping',
-            time: '4:30 PM',
-            amount: -85.50,
-            isExpense: true,
-          ),
-          TransactionData(
-            emoji: '🎮',
-            title: 'Netflix Subscription',
-            category: 'Entertainment',
-            time: '10:00 AM',
-            amount: -15.99,
-            isExpense: true,
-          ),
-        ],
-      ),
-    ];
+    return BlocBuilder<BudgetBloc, BudgetState>(
+      builder: (context, state) {
+        if (state.isLoading && state.transactions.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    // Apply limit if specified
-    final displayGroups = limit != null ? _limitTransactions(allTransactions, limit!) : allTransactions;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...displayGroups.map((group) => _TransactionGroupWidget(group: group)),
-
-        if (limit != null)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: TextButton(
-                onPressed: () {},
-                child: const Text('View All Transactions →'),
-              ),
+        if (state.transactions.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.receipt_long,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No transactions yet',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap the + button to add your first transaction',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ),
-      ],
+          );
+        }
+
+        // Group transactions by date
+        final groupedTransactions = _groupTransactionsByDate(state.transactions);
+
+        // Apply limit if specified
+        final displayGroups = limit != null
+            ? _limitTransactions(groupedTransactions, limit!)
+            : groupedTransactions;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...displayGroups.map((group) => _TransactionGroupWidget(group: group)),
+
+            if (limit != null && groupedTransactions.length > displayGroups.length)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: TextButton(
+                    onPressed: () {
+                      // Switch to List tab (index 1)
+                      DefaultTabController.of(context).animateTo(1);
+                    },
+                    child: const Text('View All Transactions →'),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
+  }
+
+  List<TransactionGroup> _groupTransactionsByDate(List<Transaction> transactions) {
+    final Map<String, List<Transaction>> grouped = {};
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    for (final transaction in transactions) {
+      final transactionDate = DateTime(
+        transaction.date.year,
+        transaction.date.month,
+        transaction.date.day,
+      );
+
+      String dateLabel;
+      if (transactionDate == today) {
+        dateLabel = 'Today';
+      } else if (transactionDate == yesterday) {
+        dateLabel = 'Yesterday';
+      } else {
+        dateLabel = DateFormat('MMMM d, yyyy').format(transaction.date);
+      }
+
+      grouped.putIfAbsent(dateLabel, () => []).add(transaction);
+    }
+
+    return grouped.entries.map((entry) {
+      return TransactionGroup(
+        date: entry.key,
+        transactions: entry.value,
+      );
+    }).toList();
   }
 
   List<TransactionGroup> _limitTransactions(List<TransactionGroup> groups, int limit) {
@@ -149,14 +180,23 @@ class _TransactionGroupWidget extends StatelessWidget {
 }
 
 class _TransactionCard extends StatelessWidget {
-  final TransactionData transaction;
+  final Transaction transaction;
 
   const _TransactionCard({required this.transaction});
+
+  String _formatTime(DateTime date) {
+    return DateFormat('h:mm a').format(date);
+  }
+
+  String _formatCurrency(double amount) {
+    return '₱${amount.abs().toStringAsFixed(2)}';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(transaction.title + transaction.time),
+      key: Key(transaction.id.toString()),
+      direction: DismissDirection.horizontal,
       background: Container(
         decoration: BoxDecoration(
           color: Colors.red,
@@ -175,51 +215,134 @@ class _TransactionCard extends StatelessWidget {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.edit, color: Colors.white),
       ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: 1,
-          ),
-        ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: transaction.isExpense
-                  ? Colors.red.shade50
-                  : Colors.green.shade50,
-              borderRadius: BorderRadius.circular(12),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.endToStart) {
+          // Edit (swipe right) - show dialog with bloc provider
+          // Get bloc before async operation
+          final bloc = context.read<BudgetBloc>();
+          // Use Navigator.push to ensure proper context
+          showDialog(
+            context: context,
+            builder: (dialogContext) => BlocProvider.value(
+              value: bloc,
+              child: AddTransactionDialog(transaction: transaction),
             ),
-            child: Center(
-              child: Text(
-                transaction.emoji,
-                style: const TextStyle(fontSize: 24),
+          );
+          return false; // Don't dismiss, dialog handles it
+        } else {
+          // Delete (swipe left) - show confirmation
+          final shouldDelete = await showDialog<bool>(
+            context: context,
+            builder: (deleteContext) => AlertDialog(
+              title: const Text('Delete Transaction'),
+              content: const Text('Are you sure you want to delete this transaction?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(deleteContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(deleteContext).pop(true),
+                  child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          ) ?? false;
+          
+          return shouldDelete; // Return true to allow dismissal, false to cancel
+        }
+      },
+      onDismissed: (direction) {
+        // This is called only after confirmDismiss returns true
+        // Delete the transaction when dismissed
+        if (direction == DismissDirection.startToEnd) {
+          context.read<BudgetBloc>().add(TransactionDeleted(transaction.id!));
+        }
+      },
+      child: InkWell(
+        onTap: () {
+          // Allow tap to edit
+          final bloc = context.read<BudgetBloc>();
+          showDialog(
+            context: context,
+            builder: (dialogContext) => BlocProvider.value(
+              value: bloc,
+              child: AddTransactionDialog(transaction: transaction),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+              width: 1,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: transaction.isExpense
+                    ? Colors.red.shade50
+                    : Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  transaction.emoji,
+                  style: const TextStyle(fontSize: 24),
+                ),
               ),
             ),
-          ),
-          title: Text(
-            transaction.title,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+            title: Text(
+              transaction.title,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            subtitle: Text(
+              '${_formatTime(transaction.date)} • ${transaction.category}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${transaction.isExpense ? '-' : '+'}${_formatCurrency(transaction.amount)}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: transaction.isExpense
+                            ? Colors.red.shade700
+                            : Colors.green.shade700,
+                      ),
                 ),
-          ),
-          subtitle: Text(
-            '${transaction.time} • ${transaction.category}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  iconSize: 20,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    final bloc = context.read<BudgetBloc>();
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) => BlocProvider.value(
+                        value: bloc,
+                        child: AddTransactionDialog(transaction: transaction),
+                      ),
+                    );
+                  },
+                  tooltip: 'Edit',
                 ),
-          ),
-          trailing: Text(
-            '${transaction.isExpense ? '-' : '+'}₱${transaction.amount.abs().toStringAsFixed(2)}',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: transaction.isExpense ? Colors.red.shade700 : Colors.green.shade700,
-                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -229,28 +352,10 @@ class _TransactionCard extends StatelessWidget {
 
 class TransactionGroup {
   final String date;
-  final List<TransactionData> transactions;
+  final List<Transaction> transactions;
 
   TransactionGroup({
     required this.date,
     required this.transactions,
-  });
-}
-
-class TransactionData {
-  final String emoji;
-  final String title;
-  final String category;
-  final String time;
-  final double amount;
-  final bool isExpense;
-
-  TransactionData({
-    required this.emoji,
-    required this.title,
-    required this.category,
-    required this.time,
-    required this.amount,
-    required this.isExpense,
   });
 }

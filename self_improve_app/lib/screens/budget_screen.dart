@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/budget/budget_bloc.dart';
+import '../bloc/budget/budget_event.dart';
+import '../bloc/budget/budget_state.dart';
 import '../widgets/budget/financial_overview_card.dart';
 import '../widgets/budget/category_breakdown_widget.dart';
 import '../widgets/budget/transactions_list_widget.dart';
+import '../widgets/budget/categories_list_widget.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/budget/add_transaction_dialog.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -13,7 +19,6 @@ class BudgetScreen extends StatefulWidget {
 
 class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedPeriod = 'This Month';
 
   @override
   void initState() {
@@ -25,6 +30,95 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => BudgetBloc()..add(const BudgetInitialized(period: 'This Month')),
+      child: Builder(
+        builder: (context) => _BudgetView(),
+      ),
+    );
+  }
+}
+
+class _BudgetView extends StatefulWidget {
+  const _BudgetView();
+
+  @override
+  State<_BudgetView> createState() => _BudgetViewState();
+}
+
+class _BudgetViewState extends State<_BudgetView> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _showAddTransactionDialog() {
+    final bloc = context.read<BudgetBloc>();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocProvider.value(
+        value: bloc,
+        child: const AddTransactionDialog(),
+      ),
+    );
+  }
+
+  void _showCustomDateRangeDialog(BuildContext context) async {
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year - 1, 1, 1);
+    final lastDate = now;
+
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      initialDateRange: DateTimeRange(
+        start: now.subtract(const Duration(days: 30)),
+        end: now,
+      ),
+      helpText: 'Select Date Range',
+      cancelText: 'Cancel',
+      confirmText: 'Apply',
+    );
+
+    if (picked != null) {
+      final startDate = DateTime(
+        picked.start.year,
+        picked.start.month,
+        picked.start.day,
+      );
+      final endDate = DateTime(
+        picked.end.year,
+        picked.end.month,
+        picked.end.day,
+        23,
+        59,
+        59,
+      );
+
+      context.read<BudgetBloc>().add(
+        BudgetCustomDateRangeChanged(
+          startDate: startDate,
+          endDate: endDate,
+        ),
+      );
+    } else {
+      // User cancelled - don't change anything, dropdown will revert
+      // The bloc state remains unchanged
+    }
   }
 
   @override
@@ -58,9 +152,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Implement add transaction
-            },
+            onPressed: _showAddTransactionDialog,
           ),
         ],
       ),
@@ -74,32 +166,46 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
               children: [
                 const Icon(Icons.calendar_today, size: 20),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButton<String>(
-                    value: _selectedPeriod,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    items: [
-                      'This Week',
-                      'This Month',
-                      'Last Month',
-                      'This Year',
-                      'Custom',
-                    ].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedPeriod = newValue;
-                        });
-                      }
-                    },
+                  Expanded(
+                    child: BlocBuilder<BudgetBloc, BudgetState>(
+                      builder: (context, state) {
+                        String displayPeriod = state.period;
+                        if (state.period == 'Custom' && state.customStartDate != null && state.customEndDate != null) {
+                          final start = state.customStartDate!;
+                          final end = state.customEndDate!;
+                          displayPeriod = '${start.day}/${start.month}/${start.year} - ${end.day}/${end.month}/${end.year}';
+                        }
+                        
+                        return DropdownButton<String>(
+                          value: state.period,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          hint: Text(displayPeriod),
+                          items: [
+                            'This Week',
+                            'This Month',
+                            'Last Month',
+                            'This Year',
+                            'Custom',
+                          ].map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              if (newValue == 'Custom') {
+                                _showCustomDateRangeDialog(context);
+                              } else {
+                                context.read<BudgetBloc>().add(BudgetPeriodChanged(newValue));
+                              }
+                            }
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -162,9 +268,9 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                 ),
 
                 // Categories Tab
-                const SingleChildScrollView(
+                const Padding(
                   padding: EdgeInsets.all(16),
-                  child: CategoryBreakdownWidget(showAll: true),
+                  child: CategoriesListWidget(),
                 ),
               ],
             ),
@@ -172,11 +278,9 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Implement add expense
-        },
+        onPressed: _showAddTransactionDialog,
         icon: const Icon(Icons.add),
-        label: const Text('Add Expense'),
+        label: const Text('Add Transaction'),
       ),
     );
   }
