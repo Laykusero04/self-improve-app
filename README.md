@@ -1,6 +1,6 @@
 ## 💡 Project Name: **“LifeLens AI”**
 
-A local-first **personal growth and finance tracker** powered by **Flutter + Hive**, with AI-driven insights (that can later connect to online LLM APIs if needed).
+A local-first **personal growth and finance tracker** powered by **Flutter + sqflite**, with AI-driven insights (that can later connect to online LLM APIs if needed).
 
 ---
 
@@ -14,7 +14,7 @@ You’ll build an **offline-first** MVP app that:
 * Analyzes **how time is spent daily**
 * Gives **AI advice** on spending, time use, and goals
 
-Later phases can bring cloud sync or GPT-like AI reasoning, but MVP stays offline using **Hive for data storage** and **rule-based “AI logic”** (built manually, no API dependency).
+Later phases can bring cloud sync or GPT-like AI reasoning, but MVP stays offline using **sqflite for data storage** and **rule-based “AI logic”** (built manually, no API dependency).
 
 ---
 
@@ -36,7 +36,7 @@ Make a **self-improving personal dashboard** that:
 
 ### 1. 💰 Budget & Expense System
 
-* **Tables (Hive Boxes):**
+* **Tables (sqflite Boxes):**
 
   * `transactions` → {amount, category, date, note, type: expense/income}
   * `categories` → {name, color, emoji}
@@ -127,7 +127,7 @@ Make a **self-improving personal dashboard** that:
 | Layer            | Tool                                        |
 | ---------------- | ------------------------------------------- |
 | Frontend         | Flutter                                     |
-| Local Database   | Hive                                        |
+| Local Database   | sqflite                                        |
 | State Management | Riverpod / Provider                         |
 | Charts           | fl_chart                                    |
 | AI Logic         | Custom Dart logic (rules engine)            |
@@ -148,7 +148,7 @@ lib/
  │   ├─ skill.dart
  │   └─ daily_log.dart
  ├─ services/
- │   ├─ hive_service.dart
+ │   ├─ sqflite_service.dart
  │   ├─ ai_advisor.dart  ← rule-based logic here
  ├─ screens/
  │   ├─ dashboard_screen.dart
@@ -187,7 +187,7 @@ lib/
 
 ### Week 1
 
-* Setup Hive models + UI for Expense + Goal tracking
+* Setup sqflite models + UI for Expense + Goal tracking
 * Build dashboard summary cards
 
 ### Week 2

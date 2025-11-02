@@ -1,419 +1,762 @@
-# 🎨 LifeLens AI - UI Planning Document
+# 🎨 LifeLens AI - Enhanced UI/UX Planning Document
 
-## 📱 Navigation Structure
+## 🚀 Enhanced Navigation & Information Architecture
 
-### Bottom Navigation Bar (5 Tabs)
-1. **Dashboard** 🏠 - Main overview
-2. **Budget** 💰 - Expenses & Income
-3. **Goals** 🎯 - Savings Goals
-4. **Productivity** ⏱️ - Work & Time Tracking
-5. **Insights** 🧠 - AI Feedback & Analytics
+### Primary Navigation
+**Bottom Navigation Bar** (Always visible for quick access)
+1. **Home** 🏠 - Personalized dashboard
+2. **Budget** 💰 - Financial tracking
+3. **Goals** 🎯 - Savings goals
+4. **Activity** ⏱️ - Productivity & Skills
+5. **Insights** 🧠 - AI Analytics
 
----
-
-## 🏠 Screen 1: Dashboard
-
-### Layout Structure
-```
-┌─────────────────────────────┐
-│  LifeLens AI                │  ← AppBar
-├─────────────────────────────┤
-│                             │
-│  💰 Budget Summary Card     │
-│  ┌───────────────────────┐  │
-│  │ Total Balance: $2,450 │  │
-│  │ This Month: +$500     │  │
-│  │ Expenses: $1,200      │  │
-│  └───────────────────────┘  │
-│                             │
-│  🎯 Active Goals Card       │
-│  ┌───────────────────────┐  │
-│  │ Vacation Goal         │  │
-│  │ ▓▓▓▓▓▓▓░░░ 65%        │  │
-│  │ $3,250 / $5,000       │  │
-│  └───────────────────────┘  │
-│                             │
-│  ⏱️ Productivity Card       │
-│  ┌───────────────────────┐  │
-│  │ Today: 6.5h           │  │
-│  │ This Week: 32h        │  │
-│  │ Avg Daily: 6.4h       │  │
-│  └───────────────────────┘  │
-│                             │
-│  🧠 Skills Card             │
-│  ┌───────────────────────┐  │
-│  │ Python: 120h          │  │
-│  │ Design: 45h           │  │
-│  └───────────────────────┘  │
-│                             │
-│  💡 Quick AI Insight        │
-│  ┌───────────────────────┐  │
-│  │ "You're on track!     │  │
-│  │  Keep up the good     │  │
-│  │  work this week."     │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-      [➕ Floating Action Button]
-```
-
-### Components Needed
-- **Summary Cards**: Rounded corners, shadow, colored header bar
-- **Progress Bars**: Linear progress indicators for goals
-- **Quick Stats**: Large numbers, small labels
-- **AI Insight Card**: Highlighted with accent color
+### Secondary Navigation
+- **Pull-down Menu** from AppBar: Settings, Profile, Export Data
+- **Swipe Navigation**: Swipe between tabs (with indicator)
+- **Quick Actions Menu**: Long-press FAB for multiple quick actions
 
 ---
 
-## 💰 Screen 2: Budget & Expenses
+## 🎯 Enhanced User Workflows
 
-### Layout Structure
+### Workflow 1: Quick Expense Entry (Optimized)
 ```
-┌─────────────────────────────┐
-│  Budget 💰           [➕]   │  ← AppBar with FAB
-├─────────────────────────────┤
-│                             │
-│  Balance Summary            │
-│  ┌───────────────────────┐  │
-│  │ Income: $3,000        │  │
-│  │ Expenses: $1,200      │  │
-│  │ Balance: $1,800       │  │
-│  └───────────────────────┘  │
-│                             │
-│  [📊 Chart] [📋 List]       │  ← Toggle Buttons
-│                             │
-│  Category Breakdown         │
-│  ┌───────────────────────┐  │
-│  │ 🍔 Food      $450     │  │
-│  │ 🚗 Transport $200     │  │
-│  │ 🏠 Housing   $300     │  │
-│  │ 🎮 Leisure   $250     │  │
-│  └───────────────────────┘  │
-│                             │
-│  Recent Transactions         │
-│  ┌───────────────────────┐  │
-│  │ 🍔 Coffee      -$5.50 │  │
-│  │ 💰 Salary     +$1500 │  │
-│  │ 🚗 Gas        -$45.00 │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
+1. User opens app → Dashboard shows
+2. Quick Add FAB on Dashboard → Context Menu appears
+   ├─ Add Expense (Fastest: Recent category)
+   ├─ Add Income
+   ├─ Start Timer
+   └─ Add Goal
+3. Expense Entry Flow:
+   ├─ Quick Add: Tap amount → Select category → Auto-save (3 taps)
+   ├─ Full Add: Tap "Add Expense" → Form opens → Fill details → Save
+4. Success feedback → Toast notification + Haptic feedback
+5. Dashboard auto-refreshes → Shows updated balance
 ```
 
-### Components Needed
-- **Transaction List Tile**: Icon, description, amount, date
-- **Category Card**: Emoji, name, total amount, color indicator
-- **Chart Widget**: Pie chart for categories (can use fl_chart)
-- **Add Transaction Dialog**: Form with fields (amount, category, date, note)
+### Workflow 2: Goal Tracking (Enhanced)
+```
+1. Navigate to Goals tab
+2. Swipe on goal card → Quick actions (Add money, Edit, Delete)
+3. Tap goal card → Expanded view:
+   ├─ Progress chart
+   ├─ Timeline
+   ├─ Savings suggestions
+   └─ History of contributions
+4. Quick contribute: Swipe right on goal → Amount picker → Confirm
+```
+
+### Workflow 3: Productivity Tracking (Context-Aware)
+```
+1. Navigate to Activity tab
+2. Floating Timer Widget (Collapsible):
+   ├─ Expand: Shows timer controls
+   ├─ Collapse: Small widget in corner
+3. Start Timer → Auto-category suggestion based on time/previous
+4. Timer runs in background → Notification shows progress
+5. Stop Timer → Quick save dialog with suggested category
+```
+
+### Workflow 4: Insights Discovery (Progressive)
+```
+1. Navigate to Insights tab
+2. Pull to refresh → Updates all analytics
+3. Tap insight card → Detailed breakdown
+4. Swipe insights → Archive or dismiss
+5. Long-press insight → Save to favorites or set reminder
+```
 
 ---
 
-## 🎯 Screen 3: Goals Tracker
+## 🏠 Screen 1: Enhanced Dashboard
 
-### Layout Structure
+### Modern Layout Structure
 ```
-┌─────────────────────────────┐
-│  Goals 🎯            [➕]   │  ← AppBar
-├─────────────────────────────┤
-│                             │
-│  ┌───────────────────────┐  │
-│  │ 🏖️ Vacation Fund      │  │
-│  │ ▓▓▓▓▓▓▓▓░░ 65%        │  │
-│  │ $3,250 / $5,000        │  │
-│  │ Due: Dec 2024          │  │
-│  │ [Edit] [Delete]        │  │
-│  └───────────────────────┘  │
-│                             │
-│  ┌───────────────────────┐  │
-│  │ 💻 New Laptop          │  │
-│  │ ▓▓▓▓░░░░░░ 30%        │  │
-│  │ $900 / $3,000          │  │
-│  │ Due: Mar 2025          │  │
-│  │ [Edit] [Delete]        │  │
-│  └───────────────────────┘  │
-│                             │
-│  Completed Goals            │
-│  ┌───────────────────────┐  │
-│  │ ✅ Emergency Fund     │  │
-│  │    $5,000 ✓          │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
+┌─────────────────────────────────────┐
+│ [☰] LifeLens          [🔔] [👤]     │  ← AppBar (Menu, Notifications, Profile)
+├─────────────────────────────────────┤
+│                                     │
+│ 👋 Welcome back!                    │  ← Personalized Greeting
+│                                     │
+│ ╔═══════════════════════════════╗   │
+│ ║  💰 Financial Health          ║   │
+│ ║  ┌─────────────────────────┐  ║   │
+│ ║  │ Current Balance         │  ║   │
+│ ║  │ $2,450.00               │  ║   │  ← Large, prominent
+│ ║  │                         │  ║   │
+│ ║  │ This Month: +$500 ↗️    │  ║   │  ← Trend indicator
+│ ║  │ Spent: $1,200           │  ║   │
+│ ║  └─────────────────────────┘  ║   │
+│ ║                                ║   │
+│ ║  [📊 View Details →]           ║   │  ← Quick action button
+│ ╚═══════════════════════════════╝   │
+│                                     │
+│ 🎯 Active Goals (2)                │
+│ ┌──────────────┐  ┌──────────────┐ │
+│ │ 🏖️ Vacation  │  │ 💻 Laptop   │ │  ← Compact cards in row
+│ │ ▓▓▓▓▓▓▓░░ 65%│  │ ▓▓▓▓░░░░ 30%│ │
+│ │ $3,250/$5K  │  │ $900/$3K    │ │
+│ └──────────────┘  └──────────────┘ │
+│ [View All →]                        │
+│                                     │
+│ ⏱️ Today's Productivity              │
+│ ┌─────────────────────────────────┐ │
+│ │ Focus Hours: 6.5h               │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 82%          │ │  ← Progress to daily goal
+│ │ Sessions: 3                     │ │
+│ │ [⏺️ Start Timer] [📊 View Stats]│ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ 🧠 Skills Progress                   │
+│ ┌─────────────────────────────────┐ │
+│ │ Python     ▓▓▓▓▓▓░░░░  50%     │ │
+│ │ Design     ▓▓▓▓▓░░░░░  40%     │ │
+│ │ Flutter    ▓▓▓░░░░░░░  20%     │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ 💡 AI Insight of the Day            │
+│ ┌─────────────────────────────────┐ │
+│ │ 🧭 "You're on track this week! │ │
+│ │                                 │ │
+│ │ Your spending is 15% below     │ │
+│ │ target and productivity is up. │ │
+│ │ Keep it up! 💪"                │ │
+│ │                                 │ │
+│ │ [Dismiss] [Save] [Share]       │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ Quick Actions                       │
+│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐   │
+│ │ 💰  │ │ ⏺️  │ │ 🎯  │ │ 📊  │   │  ← Icon buttons
+│ │Add  │ │Start│ │New  │ │Chart│   │
+│ │Exp  │ │Timer│ │Goal │ │View │   │
+│ └─────┘ └─────┘ └─────┘ └─────┘   │
+│                                     │
+└─────────────────────────────────────┘
+       [➕]  ← Floating Action Button (Long-press for menu)
 ```
 
-### Components Needed
-- **Goal Card**: Progress bar, target/saved amounts, due date
-- **Progress Indicator**: Custom linear progress bar with percentage
-- **Add Goal Dialog**: Name, target amount, due date
-- **Empty State**: "No goals yet" message when list is empty
+### Enhanced Features
+- **Pull to Refresh**: Swipe down to update all data
+- **Swipe Actions**: Swipe cards left/right for quick actions
+- **Quick Stats Cards**: Tap to expand and see details
+- **Smart Suggestions**: Context-aware quick actions
+- **Live Updates**: Real-time balance updates
+- **Trend Indicators**: Visual arrows showing improvement/decline
 
 ---
 
-## ⏱️ Screen 4: Productivity Tracker
+## 💰 Screen 2: Enhanced Budget & Expenses
 
-### Layout Structure
+### Modern Layout Structure
 ```
-┌─────────────────────────────┐
-│  Productivity ⏱️     [⏺️]   │  ← AppBar with Timer
-├─────────────────────────────┤
-│                             │
-│  Today's Summary            │
-│  ┌───────────────────────┐  │
-│  │ Focus Hours: 6.5h     │  │
-│  │ Sessions: 3           │  │
-│  │ Avg Session: 2.2h     │  │
-│  └───────────────────────┘  │
-│                             │
-│  [📊 This Week] [📊 This Month]
-│                             │
-│  Work Sessions Today        │
-│  ┌───────────────────────┐  │
-│  │ 🎨 Design Work        │  │
-│  │ 09:00 - 11:30 (2.5h) │  │
-│  │                       │  │
-│  │ 💻 Coding             │  │
-│  │ 14:00 - 17:00 (3.0h) │  │
-│  │                       │  │
-│  │ 📚 Learning           │  │
-│  │ 19:00 - 20:00 (1.0h) │  │
-│  └───────────────────────┘  │
-│                             │
-│  [➕ Add Manual Entry]      │
-│                             │
-└─────────────────────────────┘
+┌─────────────────────────────────────┐
+│ [←] Budget 💰        [🔍] [➕]       │  ← AppBar with Search & Add
+├─────────────────────────────────────┤
+│ [📅 This Month ▼]                   │  ← Date Filter (Dropdown)
+│                                     │
+│ Financial Overview                  │
+│ ┌─────────────────────────────────┐ │
+│ │ ┌─────────┐ ┌─────────┐       │ │
+│ │ │Income   │ │Expenses │       │ │  ← Split cards
+│ │ │$3,000   │ │$1,200   │       │ │
+│ │ │↗️ +12%  │ │↘️ -8%   │       │ │  ← Trend indicators
+│ │ └─────────┘ └─────────┘       │ │
+│ │                                 │ │
+│ │ Balance: $1,800                 │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 60%        │ │  ← Visual indicator
+│ └─────────────────────────────────┘ │
+│                                     │
+│ [📊 Chart] [📋 List] [🏷️ Categories]│  ← Tab Bar
+│                                     │
+│ ┌── Category Breakdown ──────────┐ │
+│ │ 🍔 Food        $450  30%       │ │  ← Horizontal bar
+│ │ ▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░           │ │
+│ │                                │ │
+│ │ 🚗 Transport   $200  13%       │ │
+│ │ ▓▓▓▓▓▓░░░░░░░░░░░░░░           │ │
+│ │                                │ │
+│ │ 🏠 Housing     $300  20%       │ │
+│ │ ▓▓▓▓▓▓▓▓▓░░░░░░░░░░░           │ │
+│ │                                │ │
+│ │ [View All Categories →]        │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ Recent Transactions                 │
+│ ┌─────────────────────────────────┐ │
+│ │ 🔄 Today                       │ │  ← Grouped by date
+│ │ ┌─────────────────────────────┐ │ │
+│ │ │ 🍔 Coffee House      -$5.50│ │ │
+│ │ │   2:30 PM • Food           │ │ │  ← Swipe left: Delete
+│ │ └─────────────────────────────┘ │ │     Swipe right: Edit
+│ │ ┌─────────────────────────────┐ │ │
+│ │ │ 💰 Salary          +$1,500 │ │ │
+│ │ │   9:00 AM • Income          │ │ │
+│ │ └─────────────────────────────┘ │ │
+│ │                                │ │
+│ │ 🔄 Yesterday                   │ │
+│ │ ┌─────────────────────────────┐ │ │
+│ │ │ 🚗 Gas Station       -$45.00│ │ │
+│ │ │   6:45 PM • Transport       │ │ │
+│ │ └─────────────────────────────┘ │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ [View All Transactions →]           │
+│                                     │
+└─────────────────────────────────────┘
 ```
 
-### Components Needed
-- **Timer Widget**: Start/Stop/Pause buttons, time display
-- **Session Card**: Task name, time range, duration
-- **Time Input Dialog**: Start time, end time, task name
-- **Chart Widget**: Line chart showing daily/weekly productivity trends
+### Enhanced Features
+- **Smart Search**: Search by category, amount, note, date
+- **Advanced Filtering**: Filter by type, date range, amount range
+- **Swipe Actions**: Swipe left (delete), swipe right (edit/duplicate)
+- **Quick Edit**: Tap transaction → Inline edit or bottom sheet
+- **Bulk Operations**: Long-press to select multiple → Delete/Export
+- **Visual Spending Patterns**: Color-coded categories with percentage bars
+- **Smart Categories**: Auto-suggest based on location/time
+- **Recurring Transactions**: Set up monthly bills/income
 
 ---
 
-## 🧠 Screen 5: Insights & AI Feedback
+## 🎯 Screen 3: Enhanced Goals Tracker
 
-### Layout Structure
+### Modern Layout Structure
 ```
-┌─────────────────────────────┐
-│  Insights 🧠                │  ← AppBar
-├─────────────────────────────┤
-│                             │
-│  💡 Daily Summary           │
-│  ┌───────────────────────┐  │
-│  │ 🧭 LifeLens AI says:  │  │
-│  │                       │  │
-│  │ You're 65% on track   │  │
-│  │ to reach your saving  │  │
-│  │ goal. Productivity    │  │
-│  │ improved by 12% this  │  │
-│  │ week. Great progress! │  │
-│  │                       │  │
-│  └───────────────────────┘  │
-│                             │
-│  📊 Weekly Analytics        │
-│  ┌───────────────────────┐  │
-│  │ Time Allocation Chart │  │
-│  │ [Pie Chart]           │  │
-│  │                       │  │
-│  │ Work: 35%             │  │
-│  │ Leisure: 25%          │  │
-│  │ Sleep: 30%            │  │
-│  │ Study: 10%            │  │
-│  └───────────────────────┘  │
-│                             │
-│  💰 Spending Insights       │
-│  ┌───────────────────────┐  │
-│  │ Food spending is 30%  │  │
-│  │ above your target.    │  │
-│  │ Consider reducing     │  │
-│  │ dining out.           │  │
-│  └───────────────────────┘  │
-│                             │
-│  🎯 Goal Suggestions        │
-│  ┌───────────────────────┐  │
-│  │ To reach your goal    │  │
-│  │ faster, save $125/week│  │
-│  │ instead of $100.      │  │
-│  └───────────────────────┘  │
-│                             │
-└─────────────────────────────┘
+┌─────────────────────────────────────┐
+│ [←] Goals 🎯           [➕] [🔍]      │  ← AppBar
+├─────────────────────────────────────┤
+│ [All ▼] [Active] [Completed] [Archived]│  ← Filter Tabs
+│                                     │
+│ 🎯 Active Goals (2)                 │
+│ ┌─────────────────────────────────┐ │
+│ │ 🏖️ Vacation Fund               │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓░░░░░░░ 65%         │ │  ← Animated progress
+│ │                                 │ │
+│ │ $3,250 / $5,000                 │ │
+│ │ $1,750 remaining                │ │
+│ │                                 │ │
+│ │ Target: Dec 31, 2024            │ │
+│ │ Remaining: 45 days              │ │
+│ │ Suggested: $39/week             │ │  ← AI suggestion
+│ │                                 │ │
+│ │ ┌──────────┐ ┌──────────┐     │ │
+│ │ │+ $50     │ │Quick Save│     │ │  ← Quick actions
+│ │ └──────────┘ └──────────┘     │ │
+│ │                                 │ │
+│ │ [📊 View Details] [✏️ Edit]     │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ 💻 New Laptop                   │ │
+│ │ ▓▓▓▓▓░░░░░░░░░░░░░░░ 30%       │ │
+│ │                                 │ │
+│ │ $900 / $3,000                   │ │
+│ │ $2,100 remaining                │ │
+│ │                                 │ │
+│ │ Target: Mar 15, 2025            │ │
+│ │ Remaining: 120 days              │ │
+│ │ Suggested: $18/week             │ │
+│ │                                 │ │
+│ │ [Quick Actions...]              │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ Completed Goals                     │
+│ ┌─────────────────────────────────┐ │
+│ │ ✅ Emergency Fund               │ │
+│ │    Completed: Oct 15, 2024      │ │
+│ │    Amount: $5,000               │ │
+│ │    [View Details] [Archive]     │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ [Add New Goal]                      │  ← CTA when empty
+│                                     │
+└─────────────────────────────────────┘
 ```
 
-### Components Needed
-- **AI Insight Card**: Styled message box with icon
-- **Chart Widgets**: Pie chart for time allocation
-- **Recommendation Cards**: Actionable suggestions
-- **Empty State**: When no data available
+### Enhanced Features
+- **Goal Details View**: Tap card → Full screen with timeline, chart, contributions history
+- **Quick Contribution**: Swipe right on goal → Amount picker → One-tap save
+- **Goal Templates**: Quick-start templates (Vacation, Emergency, Car, etc.)
+- **Visual Progress**: Animated progress bars, celebration on milestones
+- **Smart Suggestions**: AI calculates weekly savings needed
+- **Goal Insights**: Shows if on track, ahead, or behind schedule
+- **Achievement Badges**: Celebrate reaching milestones
 
 ---
 
-## 🎨 Design System
+## ⏱️ Screen 4: Enhanced Productivity & Activity
 
-### Color Palette
+### Modern Layout Structure
 ```
-Primary: #2196F3 (Blue)
-Secondary: #4CAF50 (Green - for positive values)
-Accent: #FF9800 (Orange - for warnings)
-Error: #F44336 (Red - for expenses/negative)
-Background: #F5F5F5 (Light Gray)
-Card: #FFFFFF (White)
-Text Primary: #212121 (Dark Gray)
-Text Secondary: #757575 (Medium Gray)
+┌─────────────────────────────────────┐
+│ [←] Activity ⏱️         [➕] [📊]    │  ← AppBar with Add & Stats
+├─────────────────────────────────────┤
+│                                     │
+│ ╔═══════════════════════════════╗   │
+│ ║  Timer Widget (Collapsible)   ║   │
+│ ║  ┌─────────────────────────┐  ║   │
+│ ║  │ 🎨 Design Work          │  ║   │  ← Current task
+│ ║  │ 02:45:30                │  ║   │  ← Large time display
+│ ║  │                         │  ║   │
+│ ║  │ [⏸️] [⏹️] [📝]          │  ║   │  ← Controls
+│ ║  └─────────────────────────┘  ║   │
+│ ╚═══════════════════════════════╝   │
+│                                     │
+│ Today's Summary                     │
+│ ┌─────────────────────────────────┐ │
+│ │ Focus Hours: 6.5h / 8h goal     │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 81%           │ │
+│ │                                 │ │
+│ │ Sessions: 3                     │ │
+│ │ Avg Session: 2.2h               │ │
+│ │                                 │ │
+│ │ [📊 View Weekly Stats]          │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ [📅 Today ▼] [📅 This Week] [📅 Month]│  ← Time Period Tabs
+│                                     │
+│ Today's Sessions                    │
+│ ┌─────────────────────────────────┐ │
+│ │ 🎨 Design Work                  │ │
+│ │ 09:00 AM - 11:30 AM            │ │
+│ │ Duration: 2h 30m                │ │
+│ │ ▓▓▓▓▓▓▓▓▓░░░░ 83% of avg       │ │
+│ │ [✏️ Edit] [🗑️ Delete]           │ │
+│ ├─────────────────────────────────┤ │
+│ │ 💻 Coding                        │ │
+│ │ 02:00 PM - 05:00 PM            │ │
+│ │ Duration: 3h 00m               │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓▓░░ 100% of avg     │ │
+│ │ [✏️ Edit] [🗑️ Delete]           │ │
+│ ├─────────────────────────────────┤ │
+│ │ 📚 Learning                      │ │
+│ │ 07:00 PM - 08:00 PM            │ │
+│ │ Duration: 1h 00m                │ │
+│ │ ▓▓▓▓▓▓▓░░░░░ 67% of avg        │ │
+│ │ [✏️ Edit] [🗑️ Delete]           │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ 🧠 Skills Progress                   │
+│ ┌─────────────────────────────────┐ │
+│ │ Python                           │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓░░░░░░ 50% (120h)    │ │
+│ │ This week: +8h                  │ │
+│ │                                 │ │
+│ │ Flutter                          │ │
+│ │ ▓▓▓▓▓▓▓░░░░░░░░░ 40% (96h)     │ │
+│ │ This week: +5h                  │ │
+│ │                                 │ │
+│ │ Design                           │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 45% (108h)    │ │
+│ │ This week: +6h                  │ │
+│ │                                 │ │
+│ │ [Add New Skill]                 │ │
+│ └────────────────────────────────┘ │
+│                                     │
+└─────────────────────────────────────┘
 ```
 
-### Typography
+### Enhanced Features
+- **Collapsible Timer**: Collapse to small widget, expand for full controls
+- **Pomodoro Mode**: Built-in Pomodoro timer with breaks
+- **Background Tracking**: Timer continues when app is minimized
+- **Smart Categories**: Auto-suggest task categories
+- **Session Templates**: Quick-start common tasks
+- **Productivity Score**: Calculate daily/weekly productivity score
+- **Focus Mode**: Distraction-free timer interface
+- **Session Insights**: Compare sessions, identify patterns
+
+---
+
+## 🧠 Screen 5: Enhanced Insights & AI Analytics
+
+### Modern Layout Structure
 ```
-Headings: 
-  - H1: 24px, Bold
-  - H2: 20px, SemiBold
-  - H3: 18px, SemiBold
+┌─────────────────────────────────────┐
+│ [←] Insights 🧠         [🔔] [⚙️]    │  ← AppBar with Notifications, Settings
+├─────────────────────────────────────┤
+│                                     │
+│ 💡 Daily AI Summary                 │
+│ ┌─────────────────────────────────┐ │
+│ │ 🧭 LifeLens AI                  │ │
+│ │                                 │ │
+│ │ "Great work this week! 📈      │ │
+│ │                                 │ │
+│ │ Your financial health score    │ │
+│ │ improved by 15%. You're saving  │ │
+│ │ more and spending wisely. Your  │ │
+│ │ productivity is up 20% compared │ │
+│ │ to last week.                   │ │
+│ │                                 │ │
+│ │ Keep up the momentum! 🚀"       │ │
+│ │                                 │ │
+│ │ [💬 Chat with AI] [📤 Share]   │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ 📊 Weekly Analytics                 │
+│ ┌─────────────────────────────────┐ │
+│ │ Time Allocation                │ │
+│ │ [Pie Chart - Interactive]       │ │
+│ │                                 │ │
+│ │ Tap segments to see details:   │ │
+│ │ • Work: 35% (28h)              │ │
+│ │ • Leisure: 25% (20h)           │ │
+│ │ • Sleep: 30% (24h)             │ │
+│ │ • Study: 10% (8h)              │ │
+│ │                                 │ │
+│ │ [Compare to Last Week]         │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ 💰 Spending Insights                │
+│ ┌─────────────────────────────────┐ │
+│ │ ⚠️ Attention Needed             │ │
+│ │                                 │ │
+│ │ Food spending is 30% above      │ │
+│ │ your target this month.         │ │
+│ │                                 │ │
+│ │ Recommendation:                 │ │
+│ │ • Reduce dining out by 20%      │ │
+│ │ • Set weekly food budget        │ │
+│ │                                 │ │
+│ │ [Set Budget] [Dismiss]          │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ 🎯 Goal Recommendations             │
+│ ┌─────────────────────────────────┐ │
+│ │ 💡 Smart Suggestion             │ │
+│ │                                 │ │
+│ │ To reach your vacation goal     │ │
+│ │ faster, increase weekly         │ │
+│ │ savings from $100 to $125.      │ │
+│ │                                 │ │
+│ │ This would help you reach your  │ │
+│ │ goal 2 weeks earlier!           │ │
+│ │                                 │ │
+│ │ [Apply] [Dismiss] [Remind Later]│ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ 📈 Trends & Patterns                │
+│ ┌─────────────────────────────────┐ │
+│ │ [Line Chart - Weekly Trends]     │ │
+│ │                                 │ │
+│ │ Spending Trend: ↘️ Down 12%     │ │
+│ │ Productivity: ↗️ Up 20%          │ │
+│ │ Skill Growth: ↗️ Up 15%         │ │
+│ │                                 │ │
+│ │ [View Detailed Analytics →]     │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ 🔮 Predictions                      │
+│ ┌─────────────────────────────────┐ │
+│ │ Based on your current trends:   │ │
+│ │                                 │ │
+│ │ • You'll reach your goal in     │ │
+│ │   42 days (on track)            │ │
+│ │                                 │ │
+│ │ • Your monthly spending will    │ │
+│ │   be ~$1,350 (15% below target) │ │
+│ │                                 │ │
+│ │ [View Full Forecast]            │ │
+│ └────────────────────────────────┘ │
+│                                     │
+│ [Pull to Refresh ↻]                │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+### Enhanced Features
+- **Interactive Charts**: Tap segments/bars to see details
+- **AI Chat Interface**: Chat with AI for personalized advice
+- **Actionable Insights**: Direct actions from insight cards
+- **Trend Analysis**: Compare current vs previous periods
+- **Predictions**: Forecast future based on current patterns
+- **Export Reports**: Generate PDF/weekly summaries
+- **Personalization**: Customize which insights to show
+- **Insight History**: View past insights and recommendations
+
+---
+
+## 🎨 Enhanced Design System
+
+### Modern Color Palette (Material Design 3)
+```yaml
+Primary Colors:
+  Primary: #6750A4 (Purple)
+  Primary Container: #EADDFF
+  On Primary: #FFFFFF
+  On Primary Container: #21005D
+
+Secondary Colors:
+  Secondary: #625B71
+  Secondary Container: #E8DEF8
+  On Secondary: #FFFFFF
+  On Secondary Container: #1D192B
+
+Semantic Colors:
+  Success: #4CAF50 (Green)
+  Success Container: #C8E6C9
+  Warning: #FF9800 (Orange)
+  Warning Container: #FFE0B2
+  Error: #B3261E (Red)
+  Error Container: #F9DEDC
+  Info: #2196F3 (Blue)
+  Info Container: #BBDEFB
+
+Background Colors:
+  Background: #FFFBFE
+  Surface: #FFFFFF
+  Surface Variant: #E7E0EC
+  Surface Tint: #6750A4
+
+Text Colors:
+  On Background: #1C1B1F
+  On Surface: #1C1B1F
+  On Surface Variant: #49454F
+  Outline: #79747E
+```
+
+### Enhanced Typography Scale
+```yaml
+Display:
+  Large: 57px/64px, Regular
+  Medium: 45px/52px, Regular
+  Small: 36px/44px, Regular
+
+Headline:
+  Large: 32px/40px, Regular
+  Medium: 28px/36px, Regular
+  Small: 24px/32px, Regular
+
+Title:
+  Large: 22px/28px, Medium
+  Medium: 16px/24px, Medium
+  Small: 14px/20px, Medium
 
 Body:
-  - Large: 16px, Regular
-  - Medium: 14px, Regular
-  - Small: 12px, Regular
+  Large: 16px/24px, Regular
+  Medium: 14px/20px, Regular
+  Small: 12px/16px, Regular
+
+Label:
+  Large: 14px/20px, Medium
+  Medium: 12px/16px, Medium
+  Small: 11px/16px, Medium
 
 Numbers:
-  - Large Numbers: 32px, Bold (for important stats)
-  - Medium Numbers: 20px, SemiBold
+  Display: 64px/72px, Bold (for large amounts)
+  Headline: 32px/40px, SemiBold (for stats)
+  Title: 20px/28px, SemiBold (for medium numbers)
 ```
 
-### Spacing
-```
-Padding:
-  - Screen Padding: 16px
-  - Card Padding: 16px
-  - Item Spacing: 12px
+### Enhanced Spacing System
+```yaml
+Spacing Scale: 4px base unit
+  4px: xs
+  8px: sm
+  12px: md
+  16px: lg (standard)
+  24px: xl
+  32px: 2xl
+  48px: 3xl
+  64px: 4xl
 
-Margins:
-  - Between Cards: 16px
-  - Section Spacing: 24px
+Screen Padding: 16px (mobile), 24px (tablet)
+Card Padding: 16px
+Card Margin: 8px vertical, 16px horizontal
+Section Spacing: 24px
+Component Spacing: 12px
 ```
 
-### Components Style
-```
+### Enhanced Component Styles
+```yaml
 Cards:
-  - Border Radius: 12px
-  - Shadow: elevation 2
-  - Padding: 16px
-  - Margin: 8px vertical
+  Border Radius: 16px (large), 12px (medium), 8px (small)
+  Elevation: 2 (default), 4 (pressed), 8 (focus)
+  Shadow: 0 2px 8px rgba(0,0,0,0.08)
+  Padding: 16px
+  Background: Surface color
 
 Buttons:
-  - Border Radius: 8px
-  - Primary: Filled, Blue
-  - Secondary: Outlined
-  - Floating Action: Circular, Blue
+  Border Radius: 20px (pill), 12px (default), 8px (small)
+  Height: 40px (default), 48px (large), 32px (small)
+  Padding: 12px 24px (default)
+  Elevation: 1 (default), 2 (pressed)
 
 Input Fields:
-  - Border Radius: 8px
-  - Border: 1px solid #E0E0E0
-  - Padding: 12px
+  Border Radius: 12px
+  Border: 1px solid Outline (default)
+  Border Focus: 2px solid Primary
+  Padding: 12px 16px
+  Height: 56px
+
+Floating Action Button:
+  Size: 56px (default), 40px (mini)
+  Border Radius: 16px (extended), 28px (circular)
+  Elevation: 6
 ```
 
 ---
 
-## 📐 Layout Patterns
+## 🎯 Enhanced UX Patterns
 
-### Card Pattern
-- White background
-- Rounded corners (12px)
-- Shadow for depth
-- Colored top border or icon header
-- Padding inside (16px)
+### Gesture Interactions
+- **Swipe Left**: Delete (with undo)
+- **Swipe Right**: Edit/Quick Action
+- **Long Press**: Context menu / Multi-select
+- **Pull to Refresh**: Update data
+- **Swipe Between Tabs**: Quick navigation
+- **Pinch to Zoom**: Charts and graphs
+- **Double Tap**: Quick edit
+- **Swipe Down**: Collapse sections
 
-### List Item Pattern
-- Horizontal layout
-- Leading icon (emoji or material icon)
-- Title and subtitle
-- Trailing amount/value
-- Tap to edit/delete
+### Micro-interactions
+- **Button Press**: Ripple effect + haptic feedback
+- **Card Tap**: Subtle scale animation (0.98 scale)
+- **Success Actions**: Checkmark animation + confetti
+- **Loading States**: Skeleton loaders + shimmer
+- **Progress Updates**: Animated progress bars
+- **List Updates**: Slide-in animations
+- **Error States**: Shake animation
 
-### Empty State Pattern
-- Centered layout
-- Large icon (emoji or illustration)
-- Title text
-- Subtitle with call-to-action
-- Button to add first item
+### Feedback Systems
+- **Toast Notifications**: Non-intrusive messages (bottom)
+- **Snackbars**: Actionable feedback (undo actions)
+- **Haptic Feedback**: 
+  - Light: Selection, taps
+  - Medium: Button presses
+  - Heavy: Important actions, errors
+- **Visual Feedback**: 
+  - Color changes on interaction
+  - Loading indicators
+  - Success/error states
 
----
+### Empty States
+- **Illustration**: Custom or emoji illustration
+- **Title**: Clear, friendly message
+- **Description**: Helpful context
+- **Primary Action**: Prominent CTA button
+- **Secondary Action**: Optional link/button
 
-## 🚀 Implementation Priority
-
-### Phase 1: Core UI Structure
-1. ✅ Setup bottom navigation bar
-2. ✅ Create dashboard screen layout
-3. ✅ Create basic card widgets
-4. ✅ Add app theme/colors
-
-### Phase 2: Functional Screens
-1. ✅ Budget screen with transaction list
-2. ✅ Goals screen with progress bars
-3. ✅ Productivity screen with timer
-4. ✅ Insights screen with placeholder AI text
-
-### Phase 3: Interactive Components
-1. ✅ Add transaction dialog
-2. ✅ Add goal dialog
-3. ✅ Chart widgets (using fl_chart)
-4. ✅ Timer functionality
-
-### Phase 4: Polish
-1. ✅ Animations
-2. ✅ Empty states
-3. ✅ Loading states
-4. ✅ Error handling UI
+### Loading States
+- **Skeleton Loaders**: Placeholder cards
+- **Shimmer Effect**: Animated shimmer
+- **Progress Indicators**: Linear/circular progress
+- **Optimistic UI**: Show expected result immediately
 
 ---
 
-## 📱 Screen Flow
+## 🚀 Enhanced Workflows & Features
 
+### Onboarding Flow
 ```
-Start App
-    ↓
-Dashboard (Default)
-    ↓
-[User can navigate to any tab]
-    ↓
-Budget → Add Transaction → Form Dialog → Save → Back to Budget
-    ↓
-Goals → Add Goal → Form Dialog → Save → Back to Goals
-    ↓
-Productivity → Start Timer → Stop Timer → Save Session → Back to Productivity
-    ↓
-Insights → (Auto-generated from data)
+1. Welcome Screen
+   ├─ App introduction
+   ├─ Key features overview
+   └─ Get Started button
+
+2. Permission Requests (Progressive)
+   ├─ Notifications (optional)
+   └─ Location (optional, for smart categories)
+
+3. Quick Setup
+   ├─ Set initial budget/goal (optional)
+   ├─ Choose default categories
+   └─ Select preferred currency
+
+4. Tutorial (First-time use)
+   ├─ Highlight key features
+   ├─ Interactive walkthrough
+   └─ Skip option available
 ```
 
----
+### Quick Actions Menu
+```
+Long-press FAB → Context Menu:
+├─ 💰 Add Expense (Fast)
+├─ 💵 Add Income
+├─ ⏺️ Start Timer
+├─ 🎯 New Goal
+├─ 📊 View Stats
+└─ ⚙️ Settings
+```
 
-## 💡 UI/UX Principles
-
-1. **Simple & Clean**: Minimal design, focus on data
-2. **Color Coding**: 
-   - Green for income/positive
-   - Red for expenses/negative
-   - Blue for neutral/info
-   - Orange for warnings
-3. **Quick Actions**: FAB for primary actions (add expense, start timer)
-4. **Visual Feedback**: Progress bars, charts, trends
-5. **Easy Navigation**: Bottom nav for quick switching
-6. **Readable**: Large numbers, clear labels
-7. **Responsive**: Works on different screen sizes
-
----
-
-## 🎯 Next Steps
-
-1. Create basic theme file (`lib/theme/app_theme.dart`)
-2. Create reusable card widget (`lib/widgets/stat_card.dart`)
-3. Setup bottom navigation (`lib/main.dart`)
-4. Create placeholder screens for each tab
-5. Implement dashboard with mock data
-6. Add forms/dialogs for adding data
-7. Integrate charts library (fl_chart)
-8. Connect to Hive for data persistence (later phase)
+### Smart Features
+- **Auto-categorization**: ML-based category suggestions
+- **Recurring Transactions**: Set up bills, subscriptions
+- **Spending Limits**: Budget alerts and warnings
+- **Goal Auto-save**: Link goals to automatic savings
+- **Productivity Goals**: Daily/weekly focus hour targets
+- **Smart Notifications**: Context-aware reminders
+- **Export & Backup**: Export data to CSV/PDF
 
 ---
 
-**Note**: This is a planning document for UI structure. Actual implementation will follow Flutter best practices and Material Design guidelines.
+## 📱 Responsive Design
 
+### Breakpoints
+- **Mobile**: < 600px (Primary target)
+- **Tablet**: 600px - 900px
+- **Desktop**: > 900px
+
+### Adaptive Layouts
+- **Mobile**: Single column, bottom nav
+- **Tablet**: Two columns where appropriate, bottom nav + drawer
+- **Desktop**: Multi-column grid, sidebar navigation
+
+---
+
+## 🎯 Implementation Priority (Enhanced)
+
+### Phase 1: Foundation (Week 1)
+1. ✅ Setup Material Design 3 theme
+2. ✅ Create reusable component library
+3. ✅ Setup navigation structure
+4. ✅ Implement onboarding flow
+5. ✅ Basic dashboard with mock data
+
+### Phase 2: Core Features (Week 2-3)
+1. ✅ Budget screen with transactions
+2. ✅ Goals tracker with progress
+3. ✅ Productivity timer
+4. ✅ Basic insights screen
+5. ✅ Hive database integration
+
+### Phase 3: Enhanced UX (Week 4)
+1. ✅ Gesture interactions (swipe actions)
+2. ✅ Quick actions menu
+3. ✅ Pull to refresh
+4. ✅ Animations and transitions
+5. ✅ Loading states and skeletons
+
+### Phase 4: Advanced Features (Week 5-6)
+1. ✅ Charts and visualizations
+2. ✅ Advanced filtering and search
+3. ✅ AI insights generation
+4. ✅ Export functionality
+5. ✅ Notifications and reminders
+
+### Phase 5: Polish (Week 7-8)
+1. ✅ Performance optimization
+2. ✅ Accessibility improvements
+3. ✅ Error handling
+4. ✅ Testing and bug fixes
+5. ✅ Final UI polish
+
+---
+
+## 💡 Key UX Principles
+
+1. **Progressive Disclosure**: Show important info first, details on demand
+2. **Immediate Feedback**: Every action should have visual/haptic feedback
+3. **Forgiving UI**: Easy undo, confirmation for destructive actions
+4. **Context Awareness**: Show relevant actions based on current state
+5. **Consistency**: Same patterns across all screens
+6. **Accessibility**: Support for screen readers, large text, high contrast
+7. **Performance**: Smooth animations, fast load times
+8. **Delight**: Micro-interactions, celebrations for achievements
+9. **Clarity**: Clear labels, intuitive icons, readable typography
+10. **Efficiency**: Quick actions, shortcuts, smart defaults
+
+---
+
+**This enhanced UI/UX plan focuses on modern patterns, smooth workflows, and delightful user experiences. The design follows Material Design 3 guidelines and best practices for mobile app development.**
