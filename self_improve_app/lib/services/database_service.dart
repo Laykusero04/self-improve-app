@@ -2,6 +2,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import '../models/transaction.dart';
 import '../models/category.dart';
+import '../models/goal.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -21,7 +22,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -35,6 +36,22 @@ class DatabaseService {
       } catch (e) {
         // Column might already exist, ignore error
       }
+    }
+    if (oldVersion < 3) {
+      // Create goals table
+      await db.execute('''
+        CREATE TABLE goals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          emoji TEXT NOT NULL,
+          current REAL NOT NULL,
+          target REAL NOT NULL,
+          targetDate INTEGER NOT NULL,
+          status TEXT NOT NULL DEFAULT "active",
+          completedDate INTEGER,
+          createdAt INTEGER NOT NULL
+        )
+      ''');
     }
   }
 
@@ -61,6 +78,21 @@ class DatabaseService {
         emoji TEXT NOT NULL,
         colorValue INTEGER NOT NULL,
         type TEXT NOT NULL
+      )
+    ''');
+
+    // Create goals table
+    await db.execute('''
+      CREATE TABLE goals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        emoji TEXT NOT NULL,
+        current REAL NOT NULL,
+        target REAL NOT NULL,
+        targetDate INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT "active",
+        completedDate INTEGER,
+        createdAt INTEGER NOT NULL
       )
     ''');
 
@@ -219,6 +251,85 @@ class DatabaseService {
     }
 
     return totals;
+  }
+
+  // Goal CRUD operations
+  Future<int> insertGoal(Goal goal) async {
+    final db = await database;
+    return await db.insert('goals', goal.toMap());
+  }
+
+  Future<List<Goal>> getGoals({GoalStatus? status}) async {
+    final db = await database;
+    var query = 'SELECT * FROM goals';
+    final List<dynamic> args = [];
+
+    if (status != null) {
+      query += ' WHERE status = ?';
+      args.add(status.name);
+    }
+
+    query += ' ORDER BY createdAt DESC';
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery(query, args);
+    return maps.map((map) => Goal.fromMap(map)).toList();
+  }
+
+  Future<Goal?> getGoal(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'goals',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Goal.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<int> updateGoal(Goal goal) async {
+    final db = await database;
+    return await db.update(
+      'goals',
+      goal.toMap(),
+      where: 'id = ?',
+      whereArgs: [goal.id],
+    );
+  }
+
+  Future<int> deleteGoal(int id) async {
+    final db = await database;
+    return await db.delete(
+      'goals',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> addContribution(int goalId, double amount) async {
+    final goal = await getGoal(goalId);
+    if (goal == null) return 0;
+
+    final newCurrent = (goal.current + amount).clamp(0.0, goal.target);
+    
+    // Auto-complete goal if reached or exceeded target
+    GoalStatus newStatus = goal.status;
+    DateTime? completedDate = goal.completedDate;
+    
+    if (newCurrent >= goal.target && goal.status == GoalStatus.active) {
+      newStatus = GoalStatus.completed;
+      completedDate = DateTime.now();
+    }
+    
+    final updatedGoal = goal.copyWith(
+      current: newCurrent,
+      status: newStatus,
+      completedDate: completedDate,
+    );
+
+    return await updateGoal(updatedGoal);
   }
 }
 

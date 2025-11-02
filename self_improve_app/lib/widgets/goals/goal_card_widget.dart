@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
+import '../../models/goal.dart';
 
 class GoalCardWidget extends StatelessWidget {
-  final String emoji;
-  final String title;
-  final double progress;
-  final int current;
-  final int target;
-  final DateTime targetDate;
-  final int suggestedWeekly;
+  final Goal goal;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onViewDetails;
+  final VoidCallback? onMarkAsDone;
+  final Function(double)? onAddContribution;
 
   const GoalCardWidget({
     super.key,
-    required this.emoji,
-    required this.title,
-    required this.progress,
-    required this.current,
-    required this.target,
-    required this.targetDate,
-    required this.suggestedWeekly,
+    required this.goal,
+    this.onEdit,
+    this.onDelete,
+    this.onViewDetails,
+    this.onMarkAsDone,
+    this.onAddContribution,
   });
 
   @override
   Widget build(BuildContext context) {
-    final remaining = target - current;
-    final now = DateTime.now();
-    final daysRemaining = targetDate.difference(now).inDays;
+    final remaining = goal.remaining;
+    final daysRemaining = goal.daysRemaining;
+    final suggestedWeekly = goal.suggestedWeekly;
 
     return Card(
       elevation: 2,
@@ -32,9 +31,7 @@ class GoalCardWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        onTap: () {
-          // TODO: Navigate to goal details
-        },
+        onTap: onViewDetails,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -45,13 +42,13 @@ class GoalCardWidget extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    emoji,
+                    goal.emoji,
                     style: const TextStyle(fontSize: 32),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      title,
+                      goal.title,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -60,9 +57,10 @@ class GoalCardWidget extends StatelessWidget {
                   PopupMenuButton(
                     icon: const Icon(Icons.more_vert),
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
-                        child: Row(
+                        enabled: goal.status == GoalStatus.active,
+                        child: const Row(
                           children: [
                             Icon(Icons.edit_outlined, size: 20),
                             SizedBox(width: 12),
@@ -70,9 +68,20 @@ class GoalCardWidget extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
+                        value: 'mark_done',
+                        enabled: goal.status == GoalStatus.active,
+                        child: const Row(
+                          children: [
+                            Icon(Icons.check_circle_outline, size: 20),
+                            SizedBox(width: 12),
+                            Text('Mark as Done'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
                         value: 'delete',
-                        child: Row(
+                        child: const Row(
                           children: [
                             Icon(Icons.delete_outlined, size: 20),
                             SizedBox(width: 12),
@@ -81,6 +90,15 @@ class GoalCardWidget extends StatelessWidget {
                         ),
                       ),
                     ],
+                    onSelected: (value) {
+                      if (value == 'edit' && onEdit != null) {
+                        onEdit!();
+                      } else if (value == 'mark_done' && onMarkAsDone != null) {
+                        onMarkAsDone!();
+                      } else if (value == 'delete' && onDelete != null) {
+                        onDelete!();
+                      }
+                    },
                   ),
                 ],
               ),
@@ -90,7 +108,7 @@ class GoalCardWidget extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: progress,
+                  value: goal.progress,
                   minHeight: 12,
                   backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(
@@ -102,7 +120,7 @@ class GoalCardWidget extends StatelessWidget {
 
               // Percentage
               Text(
-                '${(progress * 100).toInt()}%',
+                '${(goal.progress * 100).toInt()}%',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
@@ -118,7 +136,7 @@ class GoalCardWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '₱${current.toStringAsFixed(0)} / ₱${target.toStringAsFixed(0)}',
+                        '₱${goal.current.toStringAsFixed(0)} / ₱${goal.target.toStringAsFixed(0)}',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -154,7 +172,7 @@ class GoalCardWidget extends StatelessWidget {
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         Text(
-                          _formatDate(targetDate),
+                          _formatDate(goal.targetDate),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -210,40 +228,27 @@ class GoalCardWidget extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Quick Actions
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _showQuickContributeDialog(context);
-                      },
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text('₱50'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+              if (goal.status == GoalStatus.active) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showFlexibleSaveDialog(context),
+                        icon: const Icon(Icons.add, size: 20),
+                        label: const Text('Quick Save'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        _showCustomAmountDialog(context);
-                      },
-                      icon: const Icon(Icons.savings_outlined, size: 20),
-                      label: const Text('Quick Save'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: onViewDetails,
                   icon: const Icon(Icons.bar_chart, size: 20),
                   label: const Text('View Details'),
                   style: OutlinedButton.styleFrom(
@@ -258,63 +263,19 @@ class GoalCardWidget extends StatelessWidget {
     );
   }
 
-  void _showQuickContributeDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Quick Contribute'),
-        content: Text('Add ₱50 to $title?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implement contribution logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('₱50 added successfully!')),
-              );
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
-    );
-  }
+  void _showFlexibleSaveDialog(BuildContext context) {
+    final suggestedWeekly = goal.suggestedWeekly;
+    final suggestedDaily = (suggestedWeekly / 7).ceil();
+    final suggestedMonthly = suggestedWeekly * 4;
 
-  void _showCustomAmountDialog(BuildContext context) {
-    final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Quick Save'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Amount',
-            prefixText: '₱',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implement contribution logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('₱${controller.text} added successfully!')),
-              );
-            },
-            child: const Text('Add'),
-          ),
-        ],
+      builder: (context) => _FlexibleSaveDialogContent(
+        goalTitle: goal.title,
+        suggestedDaily: suggestedDaily,
+        suggestedWeekly: suggestedWeekly,
+        suggestedMonthly: suggestedMonthly,
+        onAddContribution: onAddContribution,
       ),
     );
   }
@@ -335,5 +296,176 @@ class GoalCardWidget extends StatelessWidget {
       'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+}
+
+class _FlexibleSaveDialogContent extends StatefulWidget {
+  final String goalTitle;
+  final int suggestedDaily;
+  final int suggestedWeekly;
+  final int suggestedMonthly;
+  final Function(double)? onAddContribution;
+
+  const _FlexibleSaveDialogContent({
+    required this.goalTitle,
+    required this.suggestedDaily,
+    required this.suggestedWeekly,
+    required this.suggestedMonthly,
+    this.onAddContribution,
+  });
+
+  @override
+  State<_FlexibleSaveDialogContent> createState() => _FlexibleSaveDialogContentState();
+}
+
+class _FlexibleSaveDialogContentState extends State<_FlexibleSaveDialogContent> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add to ${widget.goalTitle}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Quick options based on suggested amount
+            Text(
+              'Quick Options',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildAmountChip(
+                  context,
+                  widget.suggestedDaily,
+                  'Day',
+                  _controller,
+                ),
+                _buildAmountChip(
+                  context,
+                  widget.suggestedWeekly,
+                  'Week',
+                  _controller,
+                ),
+                _buildAmountChip(
+                  context,
+                  widget.suggestedMonthly,
+                  'Month',
+                  _controller,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            // Custom amount
+            Text(
+              'Or Enter Custom Amount',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '₱',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final text = _controller.text.trim();
+            final amount = double.tryParse(text);
+            if (amount != null && amount > 0) {
+              Navigator.pop(context);
+              if (widget.onAddContribution != null) {
+                widget.onAddContribution!(amount);
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('₱${amount.toStringAsFixed(0)} added successfully!')),
+              );
+            }
+          },
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAmountChip(
+    BuildContext context,
+    int amount,
+    String period,
+    TextEditingController controller,
+  ) {
+    final isSelected = controller.text == amount.toString();
+    return InkWell(
+      onTap: () {
+        setState(() {
+          controller.text = amount.toString();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '₱$amount',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '/$period',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
