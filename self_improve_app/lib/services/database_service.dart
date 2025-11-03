@@ -22,7 +22,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -52,6 +52,34 @@ class DatabaseService {
           createdAt INTEGER NOT NULL
         )
       ''');
+    }
+    if (oldVersion < 4) {
+      // Add new columns for enhanced goals
+      try {
+        await db.execute('ALTER TABLE goals ADD COLUMN type TEXT NOT NULL DEFAULT "saving"');
+        await db.execute('ALTER TABLE goals ADD COLUMN colorValue INTEGER');
+        await db.execute('ALTER TABLE goals ADD COLUMN startDate INTEGER');
+        await db.execute('ALTER TABLE goals ADD COLUMN repeatType TEXT NOT NULL DEFAULT "daily"');
+        await db.execute('ALTER TABLE goals ADD COLUMN selectedDaysOfWeek TEXT');
+        await db.execute('ALTER TABLE goals ADD COLUMN intervalDays INTEGER NOT NULL DEFAULT 1');
+        await db.execute('ALTER TABLE goals ADD COLUMN timesPerDay INTEGER NOT NULL DEFAULT 1');
+        await db.execute('ALTER TABLE goals ADD COLUMN reminderTime TEXT');
+        await db.execute('ALTER TABLE goals ADD COLUMN showOnPeriods TEXT');
+        await db.execute('ALTER TABLE goals ADD COLUMN checklistItems TEXT');
+        await db.execute('ALTER TABLE goals ADD COLUMN endConditionType TEXT NOT NULL DEFAULT "never"');
+        await db.execute('ALTER TABLE goals ADD COLUMN endConditionValue INTEGER');
+        
+        // Migrate existing data - set startDate to createdAt if it exists, or targetDate
+        await db.execute('''
+          UPDATE goals 
+          SET startDate = createdAt,
+              colorValue = ${0xFF2196F3},
+              type = "saving"
+          WHERE startDate IS NULL
+        ''');
+      } catch (e) {
+        // Columns might already exist, ignore error
+      }
     }
   }
 
@@ -87,12 +115,24 @@ class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         emoji TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT "saving",
+        colorValue INTEGER NOT NULL DEFAULT ${0xFF2196F3},
         current REAL NOT NULL,
         target REAL NOT NULL,
-        targetDate INTEGER NOT NULL,
+        startDate INTEGER NOT NULL,
+        targetDate INTEGER,
         status TEXT NOT NULL DEFAULT "active",
         completedDate INTEGER,
-        createdAt INTEGER NOT NULL
+        createdAt INTEGER NOT NULL,
+        repeatType TEXT NOT NULL DEFAULT "daily",
+        selectedDaysOfWeek TEXT,
+        intervalDays INTEGER NOT NULL DEFAULT 1,
+        timesPerDay INTEGER NOT NULL DEFAULT 1,
+        reminderTime TEXT,
+        showOnPeriods TEXT,
+        checklistItems TEXT,
+        endConditionType TEXT NOT NULL DEFAULT "never",
+        endConditionValue INTEGER
       )
     ''');
 
