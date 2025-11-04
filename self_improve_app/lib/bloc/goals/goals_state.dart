@@ -9,6 +9,7 @@ class GoalsState extends Equatable {
   final bool isLoading;
   final String? error;
   final String? recentlyCompletedGoalTitle;
+  final int? recentlyCompletedGoalId;
 
   const GoalsState({
     this.allGoals = const [],
@@ -18,6 +19,7 @@ class GoalsState extends Equatable {
     this.isLoading = false,
     this.error,
     this.recentlyCompletedGoalTitle,
+    this.recentlyCompletedGoalId,
   });
 
   GoalsState copyWith({
@@ -28,6 +30,7 @@ class GoalsState extends Equatable {
     bool? isLoading,
     String? error,
     String? recentlyCompletedGoalTitle,
+    int? recentlyCompletedGoalId,
   }) {
     return GoalsState(
       allGoals: allGoals ?? this.allGoals,
@@ -37,6 +40,7 @@ class GoalsState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       recentlyCompletedGoalTitle: recentlyCompletedGoalTitle,
+      recentlyCompletedGoalId: recentlyCompletedGoalId,
     );
   }
 
@@ -49,6 +53,7 @@ class GoalsState extends Equatable {
         isLoading,
         error,
         recentlyCompletedGoalTitle,
+        recentlyCompletedGoalId,
       ];
 }
 

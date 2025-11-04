@@ -28,7 +28,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   late TextEditingController _endConditionValueController;
 
   // Goal Type
-  GoalType _selectedType = GoalType.habit;
+  GoalType _selectedType = GoalType.activity;
 
   // Color
   Color _selectedColor = const Color(0xFF2196F3);
@@ -131,7 +131,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
       double target = 0;
       double current = 0;
 
-      if (_selectedType == GoalType.saving) {
+      if (_selectedType == GoalType.financial) {
         current = double.parse(_currentController.text);
         target = double.parse(_targetController.text);
         if (current > target) {
@@ -289,19 +289,19 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                         children: [
                           Expanded(
                             child: _buildTypeButton(
-                              GoalType.habit,
-                              'Habit',
+                              GoalType.activity,
+                              'Activity',
                               Icons.repeat,
-                              'Track daily habits',
+                              'Track activities',
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildTypeButton(
-                              GoalType.saving,
-                              'Saving',
+                              GoalType.financial,
+                              'Financial',
                               Icons.savings,
-                              'Save money',
+                              'Financial goals',
                             ),
                           ),
                         ],
@@ -376,7 +376,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                       const SizedBox(height: 24),
 
                       // Target fields (depends on type)
-                      if (_selectedType == GoalType.saving) ...[
+                      if (_selectedType == GoalType.financial) ...[
                         TextFormField(
                           controller: _targetController,
                           decoration: const InputDecoration(
@@ -523,7 +523,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                       ],
 
                       // Times Per Day
-                      if (_selectedType == GoalType.habit) ...[
+                      if (_selectedType == GoalType.activity) ...[
                         TextFormField(
                           controller: _timesPerDayController,
                           decoration: const InputDecoration(

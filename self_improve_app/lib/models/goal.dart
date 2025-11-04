@@ -8,8 +8,8 @@ enum GoalStatus {
 }
 
 enum GoalType {
-  habit,
-  saving,
+  activity,
+  financial,
 }
 
 enum RepeatType {
@@ -68,7 +68,7 @@ class Goal extends Equatable {
     this.id,
     required this.title,
     this.emoji,
-    this.type = GoalType.saving,
+    this.type = GoalType.financial,
     Color? color,
     required this.current,
     required this.target,
@@ -161,6 +161,19 @@ class Goal extends Equatable {
       'endConditionType': endConditionType.name,
       'endConditionValue': endConditionValue,
     };
+  }
+
+  // Helper function for backward compatibility with old database values
+  static GoalType _parseGoalType(String typeStr) {
+    // Handle old values
+    if (typeStr == 'habit') return GoalType.activity;
+    if (typeStr == 'saving') return GoalType.financial;
+    
+    // Handle new values
+    return GoalType.values.firstWhere(
+      (e) => e.name == typeStr,
+      orElse: () => GoalType.financial,
+    );
   }
 
   factory Goal.fromMap(Map<String, dynamic> map) {
@@ -257,11 +270,8 @@ class Goal extends Equatable {
       title: map['title'] as String,
       emoji: map['emoji'] != null && (map['emoji'] as String).isNotEmpty ? map['emoji'] as String? : null,
       type: map['type'] != null
-          ? GoalType.values.firstWhere(
-              (e) => e.name == map['type'],
-              orElse: () => GoalType.saving,
-            )
-          : GoalType.saving,
+          ? _parseGoalType(map['type'] as String)
+          : GoalType.financial,
       color: map['colorValue'] != null
           ? Color(map['colorValue'] as int)
           : const Color(0xFF2196F3),

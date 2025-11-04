@@ -102,12 +102,19 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
       final originalGoal = await _databaseService.getGoal(event.goalId);
       if (originalGoal == null) return;
 
-      await _databaseService.addContribution(event.goalId, event.amount);
+      await _databaseService.addContribution(
+        event.goalId, 
+        event.amount,
+        markAsCompleted: event.markAsCompleted,
+      );
 
       // Check if goal was completed
       final updatedGoal = await _databaseService.getGoal(event.goalId);
       if (updatedGoal != null && updatedGoal.status == GoalStatus.completed && originalGoal.status == GoalStatus.active) {
-        emit(state.copyWith(recentlyCompletedGoalTitle: updatedGoal.title));
+        emit(state.copyWith(
+          recentlyCompletedGoalTitle: updatedGoal.title,
+          recentlyCompletedGoalId: updatedGoal.id,
+        ));
       }
       
       add(const GoalsRefreshed());
@@ -129,13 +136,18 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
         
         final updatedGoal = goal.copyWith(
           status: event.status,
-          completedDate: event.status == GoalStatus.completed ? DateTime.now() : null,
+          completedDate: event.status == GoalStatus.completed 
+              ? DateTime.now() 
+              : (event.status == GoalStatus.active ? null : goal.completedDate),
         );
         await _databaseService.updateGoal(updatedGoal);
         
         // Show completion message if marking as done from active status
         if (wasActive && willBeCompleted) {
-          emit(state.copyWith(recentlyCompletedGoalTitle: updatedGoal.title));
+          emit(state.copyWith(
+            recentlyCompletedGoalTitle: updatedGoal.title,
+            recentlyCompletedGoalId: updatedGoal.id,
+          ));
         }
         
         add(const GoalsRefreshed());

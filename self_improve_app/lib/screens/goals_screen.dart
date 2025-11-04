@@ -37,8 +37,8 @@ class _GoalsView extends StatefulWidget {
 
 enum FilterType {
   all,
-  habits,
-  savings,
+  activities,
+  financial,
   active,
   completed,
   archived,
@@ -46,6 +46,22 @@ enum FilterType {
 
 class _GoalsViewState extends State<_GoalsView> {
   FilterType _selectedFilter = FilterType.all;
+  bool _isSuccessSectionExpanded = true;
+
+  bool _isCompletedToday(Goal goal) {
+    if (goal.status != GoalStatus.completed || goal.completedDate == null) {
+      return false;
+    }
+    final now = DateTime.now();
+    final completed = goal.completedDate!;
+    return now.year == completed.year &&
+        now.month == completed.month &&
+        now.day == completed.day;
+  }
+
+  List<Goal> _getTodayCompletedGoals(List<Goal> allCompletedGoals) {
+    return allCompletedGoals.where((g) => _isCompletedToday(g)).toList();
+  }
 
   void _showAddGoalScreen() {
     final bloc = context.read<GoalsBloc>();
@@ -111,6 +127,205 @@ class _GoalsViewState extends State<_GoalsView> {
     }
   }
 
+  void _handleLogProgress(Goal goal) {
+    final bloc = context.read<GoalsBloc>();
+
+    // Show dialog to optionally add a note
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Log Progress'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Log progress for "${goal.title}"?'),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Note (optional)',
+                hintText: 'Add a note about your progress...',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+              onChanged: (value) {
+                // Store note temporarily
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              if (goal.id != null) {
+                // Increment progress by 1
+                bloc.add(ContributionAdded(goal.id!, 1));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Progress logged for "${goal.title}"'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Log Progress'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleAddNote(Goal goal) {
+    final TextEditingController noteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add Note'),
+        content: TextField(
+          controller: noteController,
+          decoration: const InputDecoration(
+            labelText: 'Note',
+            hintText: 'Add a note about this goal...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 4,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              if (noteController.text.isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Note added for "${goal.title}"'),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              }
+            },
+            child: const Text('Add Note'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleSkip(Goal goal) {
+    final TextEditingController reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Skip Goal'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Skip "${goal.title}" for today?'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Reason (optional)',
+                hintText: 'Why are you skipping this goal?',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Skipped "${goal.title}" for today'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+            child: const Text('Skip'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleFail(Goal goal) {
+    final TextEditingController reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Mark as Failed'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Mark "${goal.title}" as failed?'),
+            const SizedBox(height: 8),
+            Text(
+              'This will help you understand what went wrong.',
+              style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
+                color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Reason (optional)',
+                hintText: 'What prevented you from completing this?',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed attempt logged for "${goal.title}"'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Mark Failed'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showArchiveConfirmDialog(Goal goal) {
     final bloc = context.read<GoalsBloc>();
     showDialog(
@@ -140,35 +355,39 @@ class _GoalsViewState extends State<_GoalsView> {
 
   void _showMarkAsDoneConfirmDialog(Goal goal) {
     final bloc = context.read<GoalsBloc>();
-    final progress = (goal.progress * 100).toInt();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => BlocProvider.value(
-        value: bloc,
-        child: AlertDialog(
-          title: const Text('Mark as Done'),
+    
+    // For financial goals, ask for amount first before completing
+    if (goal.type == GoalType.financial) {
+      final amountController = TextEditingController();
+      
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Add Amount for Today'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Mark "${goal.title}" as completed?'),
-              const SizedBox(height: 12),
+              Text('Enter the amount you saved for "${goal.title}" today:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Amount (₱)',
+                  hintText: '0.00',
+                  border: OutlineInputBorder(),
+                  prefixText: '₱',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 8),
               Text(
-                'Current progress: $progress% (₱${goal.current.toStringAsFixed(0)} / ₱${goal.target.toStringAsFixed(0)})',
-                style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+                'Current: ₱${goal.current.toStringAsFixed(0)} / Target: ₱${goal.target.toStringAsFixed(0)}',
+                style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
                       color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
                     ),
               ),
-              if (progress < 100)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'This goal has not reached the target yet.',
-                    style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(dialogContext).colorScheme.error,
-                        ),
-                  ),
-                ),
             ],
           ),
           actions: [
@@ -178,15 +397,43 @@ class _GoalsViewState extends State<_GoalsView> {
             ),
             FilledButton(
               onPressed: () {
+                final amountText = amountController.text.trim();
+                if (amountText.isEmpty) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter an amount'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                final amount = double.tryParse(amountText);
+                if (amount == null || amount <= 0) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid positive amount'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
                 Navigator.pop(dialogContext);
-                bloc.add(GoalStatusChanged(goal.id!, GoalStatus.completed));
+                
+                // Add contribution and mark as completed in one operation
+                bloc.add(ContributionAdded(goal.id!, amount, markAsCompleted: true));
               },
-              child: const Text('Mark as Done'),
+              child: const Text('Complete'),
             ),
           ],
         ),
-      ),
-    );
+      );
+    } else {
+      // For activity goals, add 1 to current progress
+      // Mark as completed only when current >= timesPerDay (target)
+      bloc.add(ContributionAdded(goal.id!, 1.0, markAsCompleted: false));
+    }
   }
 
   @override
@@ -233,14 +480,14 @@ class _GoalsViewState extends State<_GoalsView> {
                   const SizedBox(width: 8),
                   _buildFilterButton(
                     icon: Icons.repeat,
-                    label: 'Habits',
-                    filter: FilterType.habits,
+                    label: 'Activities',
+                    filter: FilterType.activities,
                   ),
                   const SizedBox(width: 8),
                   _buildFilterButton(
                     icon: Icons.savings,
-                    label: 'Savings',
-                    filter: FilterType.savings,
+                    label: 'Financial',
+                    filter: FilterType.financial,
                   ),
                   const SizedBox(width: 8),
                   _buildFilterButton(
@@ -272,7 +519,8 @@ class _GoalsViewState extends State<_GoalsView> {
             current.recentlyCompletedGoalTitle != null &&
             previous.recentlyCompletedGoalTitle != current.recentlyCompletedGoalTitle,
         listener: (context, state) {
-          if (state.recentlyCompletedGoalTitle != null) {
+          if (state.recentlyCompletedGoalTitle != null && state.recentlyCompletedGoalId != null) {
+            final goalId = state.recentlyCompletedGoalId!;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
@@ -289,6 +537,14 @@ class _GoalsViewState extends State<_GoalsView> {
                 ),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 3),
+                action: SnackBarAction(
+                  label: 'Undo',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    final bloc = context.read<GoalsBloc>();
+                    bloc.add(GoalStatusChanged(goalId, GoalStatus.active));
+                  },
+                ),
               ),
             );
             // Clear the recently completed title after showing
@@ -322,52 +578,51 @@ class _GoalsViewState extends State<_GoalsView> {
             }
 
             // Filter goals based on selected filter
-            List<Goal> filteredGoals;
-            bool showAll = false;
-            bool showActive = false;
-            bool showArchived = false;
-            String emptyMessage;
-
             switch (_selectedFilter) {
               case FilterType.all:
-                filteredGoals = state.allGoals;
-                showAll = true;
-                emptyMessage = 'No goals yet. Create your first goal to get started!';
-                break;
-              case FilterType.habits:
-                filteredGoals = state.allGoals.where((g) => g.type == GoalType.habit).toList();
-                showActive = true;
-                emptyMessage = 'No habits yet. Create your first habit!';
-                break;
-              case FilterType.savings:
-                filteredGoals = state.allGoals.where((g) => g.type == GoalType.saving).toList();
-                showActive = true;
-                emptyMessage = 'No savings goals yet. Create your first savings goal!';
-                break;
+                return _buildGoalsListWithSuccessSection(
+                  activeGoals: state.activeGoals,
+                  completedGoals: state.completedGoals,
+                  emptyMessage: 'No goals yet. Create your first goal to get started!',
+                );
+              case FilterType.activities:
+                final activityGoals = state.allGoals.where((g) => g.type == GoalType.activity).toList();
+                final activeActivities = activityGoals.where((g) => g.status == GoalStatus.active).toList();
+                final completedActivities = activityGoals.where((g) => g.status == GoalStatus.completed).toList();
+                return _buildGoalsListWithSuccessSection(
+                  activeGoals: activeActivities,
+                  completedGoals: completedActivities,
+                  emptyMessage: 'No activities yet. Create your first activity!',
+                );
+              case FilterType.financial:
+                final financialGoals = state.allGoals.where((g) => g.type == GoalType.financial).toList();
+                final activeFinancial = financialGoals.where((g) => g.status == GoalStatus.active).toList();
+                final completedFinancial = financialGoals.where((g) => g.status == GoalStatus.completed).toList();
+                return _buildGoalsListWithSuccessSection(
+                  activeGoals: activeFinancial,
+                  completedGoals: completedFinancial,
+                  emptyMessage: 'No financial goals yet. Create your first financial goal!',
+                );
               case FilterType.active:
-                filteredGoals = state.activeGoals;
-                showActive = true;
-                emptyMessage = 'No active goals. Create a new goal to get started!';
-                break;
+                return _buildGoalsListWithSuccessSection(
+                  activeGoals: state.activeGoals,
+                  completedGoals: state.completedGoals,
+                  emptyMessage: 'No active goals. Create a new goal to get started!',
+                );
               case FilterType.completed:
                 return _buildCompletedGoalsList(
                   goals: state.completedGoals,
                   emptyMessage: 'No completed goals yet.',
                 );
               case FilterType.archived:
-                filteredGoals = state.archivedGoals;
-                showArchived = true;
-                emptyMessage = 'No archived goals.';
-                break;
+                return _buildGoalsList(
+                  goals: state.archivedGoals,
+                  showAll: false,
+                  showActive: false,
+                  showArchived: true,
+                  emptyMessage: 'No archived goals.',
+                );
             }
-
-            return _buildGoalsList(
-              goals: filteredGoals,
-              showAll: showAll,
-              showActive: showActive,
-              showArchived: showArchived,
-              emptyMessage: emptyMessage,
-            );
           },
         ),
       ),
@@ -376,6 +631,114 @@ class _GoalsViewState extends State<_GoalsView> {
         icon: const Icon(Icons.flag),
         label: const Text('New Goal'),
       ),
+    );
+  }
+
+  Widget _buildGoalsListWithSuccessSection({
+    required List<Goal> activeGoals,
+    required List<Goal> completedGoals,
+    required String emptyMessage,
+  }) {
+    final todayCompleted = _getTodayCompletedGoals(completedGoals);
+
+    if (activeGoals.isEmpty && todayCompleted.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.flag_outlined,
+                size: 64,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                emptyMessage,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        // Active goals
+        if (activeGoals.isNotEmpty)
+          ...activeGoals.map((goal) => Column(
+                children: [
+                  GoalCardWidget(
+                    goal: goal,
+                    onEdit: () => _showEditGoalScreen(goal),
+                    onDelete: () => _showDeleteConfirmDialog(goal),
+                    onMarkAsDone: () => _showMarkAsDoneConfirmDialog(goal),
+                    onViewDetails: () => _showViewDetails(goal),
+                    onAddContribution: (amount) => _handleAddContribution(goal, amount),
+                    onLogProgress: () => _handleLogProgress(goal),
+                    onAddNote: () => _handleAddNote(goal),
+                    onSkip: () => _handleSkip(goal),
+                    onFail: () => _handleFail(goal),
+                  ),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  ),
+                ],
+              )),
+
+        // Success section
+        if (todayCompleted.isNotEmpty)
+          Theme(
+            data: Theme.of(context),
+            child: ExpansionTile(
+              title: Text(
+                '${todayCompleted.length} Success',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              initiallyExpanded: _isSuccessSectionExpanded,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _isSuccessSectionExpanded = expanded;
+                });
+              },
+              children: todayCompleted.map((goal) => Column(
+                    children: [
+                      GoalCardWidget(
+                        goal: goal,
+                        onEdit: () => _showEditGoalScreen(goal),
+                        onDelete: () => _showDeleteConfirmDialog(goal),
+                        onMarkAsDone: null,
+                        onViewDetails: () => _showViewDetails(goal),
+                        onAddContribution: (amount) => _handleAddContribution(goal, amount),
+                        onLogProgress: () => _handleLogProgress(goal),
+                        onAddNote: () => _handleAddNote(goal),
+                        onSkip: () => _handleSkip(goal),
+                        onFail: () => _handleFail(goal),
+                        onUndo: () {
+                          final bloc = context.read<GoalsBloc>();
+                          bloc.add(GoalStatusChanged(goal.id!, GoalStatus.active));
+                        },
+                      ),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      ),
+                    ],
+                  )).toList(),
+            ),
+          ),
+      ],
     );
   }
 
@@ -429,6 +792,10 @@ class _GoalsViewState extends State<_GoalsView> {
           onMarkAsDone: showActive || showAll ? () => _showMarkAsDoneConfirmDialog(goal) : null,
           onViewDetails: () => _showViewDetails(goal),
           onAddContribution: (amount) => _handleAddContribution(goal, amount),
+          onLogProgress: () => _handleLogProgress(goal),
+          onAddNote: () => _handleAddNote(goal),
+          onSkip: () => _handleSkip(goal),
+          onFail: () => _handleFail(goal),
         );
       },
     );
@@ -495,7 +862,7 @@ class _GoalsViewState extends State<_GoalsView> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                goal.type == GoalType.habit ? Icons.repeat : Icons.savings,
+                goal.type == GoalType.activity ? Icons.repeat : Icons.savings,
                 color: goal.color,
                 size: 20,
               ),
@@ -515,7 +882,7 @@ class _GoalsViewState extends State<_GoalsView> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    goal.type == GoalType.saving 
+                    goal.type == GoalType.financial 
                         ? '₱${goal.current.toStringAsFixed(0)}'
                         : '${goal.current.toStringAsFixed(0)} times',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(

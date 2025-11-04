@@ -46,11 +46,12 @@ class GoalDeleted extends GoalsEvent {
 class ContributionAdded extends GoalsEvent {
   final int goalId;
   final double amount;
+  final bool markAsCompleted;
 
-  const ContributionAdded(this.goalId, this.amount);
+  const ContributionAdded(this.goalId, this.amount, {this.markAsCompleted = false});
 
   @override
-  List<Object> get props => [goalId, amount];
+  List<Object> get props => [goalId, amount, markAsCompleted];
 }
 
 class GoalStatusChanged extends GoalsEvent {
@@ -61,5 +62,45 @@ class GoalStatusChanged extends GoalsEvent {
 
   @override
   List<Object> get props => [goalId, status];
+}
+
+class GoalProgressLogged extends GoalsEvent {
+  final int goalId;
+  final String? note;
+
+  const GoalProgressLogged(this.goalId, {this.note});
+
+  @override
+  List<Object> get props => [goalId, if (note != null) note!];
+}
+
+class GoalNoteAdded extends GoalsEvent {
+  final int goalId;
+  final String note;
+
+  const GoalNoteAdded(this.goalId, this.note);
+
+  @override
+  List<Object> get props => [goalId, note];
+}
+
+class GoalSkipped extends GoalsEvent {
+  final int goalId;
+  final String? reason;
+
+  const GoalSkipped(this.goalId, {this.reason});
+
+  @override
+  List<Object> get props => [goalId, if (reason != null) reason!];
+}
+
+class GoalFailed extends GoalsEvent {
+  final int goalId;
+  final String? reason;
+
+  const GoalFailed(this.goalId, {this.reason});
+
+  @override
+  List<Object> get props => [goalId, if (reason != null) reason!];
 }
 

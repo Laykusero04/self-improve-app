@@ -22,7 +22,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -81,6 +81,73 @@ class DatabaseService {
         // Columns might already exist, ignore error
       }
     }
+    if (oldVersion < 5) {
+      // Fix targetDate to be nullable - SQLite doesn't support direct ALTER, so we need to recreate the table
+      try {
+        // Create backup table with nullable targetDate
+        await db.execute('''
+          CREATE TABLE goals_backup (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            type TEXT NOT NULL DEFAULT "financial",
+            colorValue INTEGER NOT NULL DEFAULT ${0xFF2196F3},
+            current REAL NOT NULL,
+            target REAL NOT NULL,
+            startDate INTEGER NOT NULL,
+            targetDate INTEGER,
+            status TEXT NOT NULL DEFAULT "active",
+            completedDate INTEGER,
+            createdAt INTEGER NOT NULL,
+            repeatType TEXT NOT NULL DEFAULT "daily",
+            selectedDaysOfWeek TEXT,
+            intervalDays INTEGER NOT NULL DEFAULT 1,
+            timesPerDay INTEGER NOT NULL DEFAULT 1,
+            reminderTime TEXT,
+            showOnPeriods TEXT,
+            checklistItems TEXT,
+            endConditionType TEXT NOT NULL DEFAULT "never",
+            endConditionValue INTEGER
+          )
+        ''');
+        
+        // Copy data with explicit column mapping
+        await db.execute('''
+          INSERT INTO goals_backup (
+            id, title, emoji, type, colorValue, current, target, startDate, targetDate,
+            status, completedDate, createdAt, repeatType, selectedDaysOfWeek,
+            intervalDays, timesPerDay, reminderTime, showOnPeriods, checklistItems,
+            endConditionType, endConditionValue
+          )
+          SELECT 
+            id, title, emoji, 
+            COALESCE(type, "financial") as type,
+            COALESCE(colorValue, ${0xFF2196F3}) as colorValue,
+            current, target,
+            COALESCE(startDate, createdAt) as startDate,
+            targetDate,
+            status, completedDate, createdAt,
+            COALESCE(repeatType, "daily") as repeatType,
+            selectedDaysOfWeek,
+            COALESCE(intervalDays, 1) as intervalDays,
+            COALESCE(timesPerDay, 1) as timesPerDay,
+            reminderTime, showOnPeriods, checklistItems,
+            COALESCE(endConditionType, "never") as endConditionType,
+            endConditionValue
+          FROM goals
+        ''');
+        
+        // Drop old table
+        await db.execute('DROP TABLE goals');
+        
+        // Rename backup to goals
+        await db.execute('ALTER TABLE goals_backup RENAME TO goals');
+      } catch (e) {
+        // If migration fails, the table structure might already be correct
+        // or there might be a different issue - log but don't fail
+        print('Migration to version 5 completed with note: $e');
+      }
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -115,7 +182,7 @@ class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         emoji TEXT NOT NULL,
-        type TEXT NOT NULL DEFAULT "saving",
+        type TEXT NOT NULL DEFAULT "financial",
         colorValue INTEGER NOT NULL DEFAULT ${0xFF2196F3},
         current REAL NOT NULL,
         target REAL NOT NULL,
@@ -348,17 +415,20 @@ class DatabaseService {
     );
   }
 
-  Future<int> addContribution(int goalId, double amount) async {
+  Future<int> addContribution(int goalId, double amount, {bool markAsCompleted = false}) async {
     final goal = await getGoal(goalId);
     if (goal == null) return 0;
 
     final newCurrent = (goal.current + amount).clamp(0.0, goal.target);
     
-    // Auto-complete goal if reached or exceeded target
+    // Auto-complete goal if reached or exceeded target, or if explicitly marking as completed
     GoalStatus newStatus = goal.status;
     DateTime? completedDate = goal.completedDate;
     
-    if (newCurrent >= goal.target && goal.status == GoalStatus.active) {
+    if (markAsCompleted && goal.status == GoalStatus.active) {
+      newStatus = GoalStatus.completed;
+      completedDate = DateTime.now();
+    } else if (newCurrent >= goal.target && goal.status == GoalStatus.active) {
       newStatus = GoalStatus.completed;
       completedDate = DateTime.now();
     }

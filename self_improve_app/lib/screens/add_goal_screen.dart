@@ -31,7 +31,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
   late TabController _scheduleTabController;
 
   // Goal Type
-  GoalType _selectedType = GoalType.habit;
+  GoalType _selectedType = GoalType.activity;
 
   // Color
   Color _selectedColor = const Color(0xFF2196F3);
@@ -319,7 +319,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
               ),
             ),
           const SizedBox(height: 24),
-          if (_selectedType == GoalType.habit) ...[
+          if (_selectedType == GoalType.activity) ...[
             Text(
               'Times Per Day',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -505,7 +505,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
             ],
           ),
         ),
-        if (_selectedType == GoalType.habit) ...[
+        if (_selectedType == GoalType.activity) ...[
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -642,7 +642,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
       double target = 0;
       double current = 0;
 
-      if (_selectedType == GoalType.saving) {
+      if (_selectedType == GoalType.financial) {
         current = double.parse(_currentController.text);
         target = double.parse(_targetController.text);
         if (current > target) {
@@ -781,19 +781,19 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
                 children: [
                   Expanded(
                     child: _buildTypeButton(
-                      GoalType.habit,
-                      'Habit',
+                      GoalType.activity,
+                      'Activity',
                       Icons.repeat,
-                      'Track daily habits',
+                      'Track activities',
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildTypeButton(
-                      GoalType.saving,
-                      'Saving',
+                      GoalType.financial,
+                      'Financial',
                       Icons.savings,
-                      'Save money',
+                      'Financial goals',
                     ),
                   ),
                 ],
@@ -868,7 +868,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
               const SizedBox(height: 24),
 
               // Target fields (depends on type)
-              if (_selectedType == GoalType.saving) ...[
+              if (_selectedType == GoalType.financial) ...[
                 TextFormField(
                   controller: _targetController,
                   decoration: const InputDecoration(
