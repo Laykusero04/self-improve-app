@@ -299,9 +299,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                           Expanded(
                             child: _buildTypeButton(
                               GoalType.financial,
-                              'Financial',
+                              'Saving',
                               Icons.savings,
-                              'Financial goals',
+                              'Saving goals',
                             ),
                           ),
                         ],

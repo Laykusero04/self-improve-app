@@ -356,7 +356,7 @@ class _GoalsViewState extends State<_GoalsView> {
   void _showMarkAsDoneConfirmDialog(Goal goal) {
     final bloc = context.read<GoalsBloc>();
     
-    // For financial goals, ask for amount first before completing
+    // For saving goals, ask for amount first before completing
     if (goal.type == GoalType.financial) {
       final amountController = TextEditingController();
       
@@ -486,7 +486,7 @@ class _GoalsViewState extends State<_GoalsView> {
                   const SizedBox(width: 8),
                   _buildFilterButton(
                     icon: Icons.savings,
-                    label: 'Financial',
+                    label: 'Saving',
                     filter: FilterType.financial,
                   ),
                   const SizedBox(width: 8),
@@ -498,7 +498,7 @@ class _GoalsViewState extends State<_GoalsView> {
                   const SizedBox(width: 8),
                   _buildFilterButton(
                     icon: Icons.check_circle_outline,
-                    label: 'Completed',
+                    label: 'Savings Completed',
                     filter: FilterType.completed,
                   ),
                   const SizedBox(width: 8),
@@ -529,7 +529,7 @@ class _GoalsViewState extends State<_GoalsView> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        '🎉 "${state.recentlyCompletedGoalTitle}" goal completed!',
+                        '🎉 "${state.recentlyCompletedGoalTitle}" goal achieved!',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -601,7 +601,7 @@ class _GoalsViewState extends State<_GoalsView> {
                 return _buildGoalsListWithSuccessSection(
                   activeGoals: activeFinancial,
                   completedGoals: completedFinancial,
-                  emptyMessage: 'No financial goals yet. Create your first financial goal!',
+                  emptyMessage: 'No saving goals yet. Create your first saving goal!',
                 );
               case FilterType.active:
                 return _buildGoalsListWithSuccessSection(
@@ -610,9 +610,13 @@ class _GoalsViewState extends State<_GoalsView> {
                   emptyMessage: 'No active goals. Create a new goal to get started!',
                 );
               case FilterType.completed:
+                // Only show saving goals in completed section
+                final completedFinancialGoals = state.completedGoals
+                    .where((g) => g.type == GoalType.financial)
+                    .toList();
                 return _buildCompletedGoalsList(
-                  goals: state.completedGoals,
-                  emptyMessage: 'No completed goals yet.',
+                  goals: completedFinancialGoals,
+                  emptyMessage: 'No saving goals completed yet.',
                 );
               case FilterType.archived:
                 return _buildGoalsList(
@@ -700,7 +704,7 @@ class _GoalsViewState extends State<_GoalsView> {
             data: Theme.of(context),
             child: ExpansionTile(
               title: Text(
-                '${todayCompleted.length} Success',
+                '${todayCompleted.length} Goal${todayCompleted.length == 1 ? '' : 's'} Achieved Today',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

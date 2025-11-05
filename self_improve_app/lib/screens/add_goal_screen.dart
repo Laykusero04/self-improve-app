@@ -122,6 +122,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
       _intervalDaysController = TextEditingController(text: '1');
       _checklistController = TextEditingController();
       _endConditionValueController = TextEditingController();
+      // For new goals with Daily schedule, default to all days (every day)
+      if (_repeatType == RepeatType.daily && _selectedDaysOfWeek.isEmpty) {
+        _selectedDaysOfWeek = {0, 1, 2, 3, 4, 5, 6};
+      }
     }
     
     _scheduleTabController = TabController(length: 3, vsync: this);
@@ -151,6 +155,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
     switch (_repeatType) {
       case RepeatType.daily:
         _scheduleTabController.index = 0;
+        // If no days are selected, select all 7 days by default (every day)
+        if (_selectedDaysOfWeek.isEmpty) {
+          _selectedDaysOfWeek = {0, 1, 2, 3, 4, 5, 6};
+        }
         break;
       case RepeatType.monthly:
         _scheduleTabController.index = 1;
@@ -162,6 +170,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
         // Weekly is no longer supported, default to daily
         _scheduleTabController.index = 0;
         _repeatType = RepeatType.daily;
+        // Select all days by default when switching from weekly to daily
+        if (_selectedDaysOfWeek.isEmpty) {
+          _selectedDaysOfWeek = {0, 1, 2, 3, 4, 5, 6};
+        }
         break;
     }
   }
@@ -170,6 +182,10 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
     switch (_scheduleTabController.index) {
       case 0:
         _repeatType = RepeatType.daily;
+        // If no days are selected, select all 7 days by default (every day)
+        if (_selectedDaysOfWeek.isEmpty) {
+          _selectedDaysOfWeek = {0, 1, 2, 3, 4, 5, 6};
+        }
         break;
       case 1:
         _repeatType = RepeatType.monthly;
@@ -182,6 +198,11 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
   }
   
   void _showScheduleBottomSheet() {
+    // When opening schedule and Daily is selected, ensure all days are selected by default
+    if (_repeatType == RepeatType.daily && _selectedDaysOfWeek.isEmpty) {
+      _selectedDaysOfWeek = {0, 1, 2, 3, 4, 5, 6};
+    }
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -307,17 +328,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
                 ),
             ],
           ),
-          if (_selectedDaysOfWeek.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                '⚠ Please select at least one day',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ),
           const SizedBox(height: 24),
           if (_selectedType == GoalType.activity) ...[
             Text(
@@ -617,15 +627,9 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
 
   void _saveGoal() {
     if (_formKey.currentState!.validate()) {
-      // Validate Daily schedule - must select at least one day
+      // For Daily schedule, if no days selected, default to all days (every day)
       if (_repeatType == RepeatType.daily && _selectedDaysOfWeek.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select at least one day of the week for daily schedule'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
+        _selectedDaysOfWeek = {0, 1, 2, 3, 4, 5, 6};
       }
       
       // Validate Interval schedule - must select an interval (should be already set, but double check)
@@ -642,7 +646,7 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
       double target = 0;
       double current = 0;
 
-      if (_selectedType == GoalType.financial) {
+      if (_selectedType == GoalType.financial) { // Saving goals
         current = double.parse(_currentController.text);
         target = double.parse(_targetController.text);
         if (current > target) {
@@ -791,9 +795,9 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
                   Expanded(
                     child: _buildTypeButton(
                       GoalType.financial,
-                      'Financial',
+                      'Saving',
                       Icons.savings,
-                      'Financial goals',
+                      'Saving goals',
                     ),
                   ),
                 ],
@@ -1256,7 +1260,8 @@ class _AddGoalScreenState extends State<AddGoalScreen> with SingleTickerProvider
   String _getScheduleDescription() {
     switch (_repeatType) {
       case RepeatType.daily:
-        if (_selectedDaysOfWeek.isEmpty) {
+        // If all 7 days are selected, show "Every day", otherwise show selected days
+        if (_selectedDaysOfWeek.isEmpty || _selectedDaysOfWeek.length == 7) {
           return 'Every day';
         } else {
           final days = _selectedDaysOfWeek.map((d) => _getDayName(d)).join(', ');
