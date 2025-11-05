@@ -22,7 +22,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -110,7 +110,7 @@ class DatabaseService {
             endConditionValue INTEGER
           )
         ''');
-        
+
         // Copy data with explicit column mapping
         await db.execute('''
           INSERT INTO goals_backup (
@@ -119,8 +119,8 @@ class DatabaseService {
             intervalDays, timesPerDay, reminderTime, showOnPeriods, checklistItems,
             endConditionType, endConditionValue
           )
-          SELECT 
-            id, title, emoji, 
+          SELECT
+            id, title, emoji,
             COALESCE(type, "financial") as type,
             COALESCE(colorValue, ${0xFF2196F3}) as colorValue,
             current, target,
@@ -136,16 +136,51 @@ class DatabaseService {
             endConditionValue
           FROM goals
         ''');
-        
+
         // Drop old table
         await db.execute('DROP TABLE goals');
-        
+
         // Rename backup to goals
         await db.execute('ALTER TABLE goals_backup RENAME TO goals');
       } catch (e) {
         // If migration fails, the table structure might already be correct
         // or there might be a different issue - log but don't fail
         print('Migration to version 5 completed with note: $e');
+      }
+    }
+    if (oldVersion < 6) {
+      // Create goal_entries table for tracking individual progress entries
+      try {
+        await db.execute('''
+          CREATE TABLE goal_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            goalId INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            entryDate INTEGER NOT NULL,
+            entryType TEXT NOT NULL,
+            note TEXT,
+            createdAt INTEGER NOT NULL,
+            FOREIGN KEY (goalId) REFERENCES goals (id) ON DELETE CASCADE
+          )
+        ''');
+
+        // Create goal_notes table for notes
+        await db.execute('''
+          CREATE TABLE goal_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            goalId INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            createdAt INTEGER NOT NULL,
+            FOREIGN KEY (goalId) REFERENCES goals (id) ON DELETE CASCADE
+          )
+        ''');
+
+        // Create index for faster queries
+        await db.execute('CREATE INDEX idx_goal_entries_goalId ON goal_entries(goalId)');
+        await db.execute('CREATE INDEX idx_goal_entries_entryDate ON goal_entries(entryDate)');
+        await db.execute('CREATE INDEX idx_goal_notes_goalId ON goal_notes(goalId)');
+      } catch (e) {
+        print('Migration to version 6 completed with note: $e');
       }
     }
   }
@@ -202,6 +237,36 @@ class DatabaseService {
         endConditionValue INTEGER
       )
     ''');
+
+    // Create goal_entries table for tracking individual progress entries
+    await db.execute('''
+      CREATE TABLE goal_entries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        goalId INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        entryDate INTEGER NOT NULL,
+        entryType TEXT NOT NULL,
+        note TEXT,
+        createdAt INTEGER NOT NULL,
+        FOREIGN KEY (goalId) REFERENCES goals (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Create goal_notes table for notes
+    await db.execute('''
+      CREATE TABLE goal_notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        goalId INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        FOREIGN KEY (goalId) REFERENCES goals (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Create indexes
+    await db.execute('CREATE INDEX idx_goal_entries_goalId ON goal_entries(goalId)');
+    await db.execute('CREATE INDEX idx_goal_entries_entryDate ON goal_entries(entryDate)');
+    await db.execute('CREATE INDEX idx_goal_notes_goalId ON goal_notes(goalId)');
 
     // Insert default categories
     await _insertDefaultCategories(db);
@@ -415,16 +480,16 @@ class DatabaseService {
     );
   }
 
-  Future<int> addContribution(int goalId, double amount, {bool markAsCompleted = false}) async {
+  Future<int> addContribution(int goalId, double amount, {bool markAsCompleted = false, String? note, String entryType = 'complete'}) async {
     final goal = await getGoal(goalId);
     if (goal == null) return 0;
 
     final newCurrent = (goal.current + amount).clamp(0.0, goal.target);
-    
+
     // Auto-complete goal if reached or exceeded target, or if explicitly marking as completed
     GoalStatus newStatus = goal.status;
     DateTime? completedDate = goal.completedDate;
-    
+
     if (markAsCompleted && goal.status == GoalStatus.active) {
       newStatus = GoalStatus.completed;
       completedDate = DateTime.now();
@@ -432,14 +497,113 @@ class DatabaseService {
       newStatus = GoalStatus.completed;
       completedDate = DateTime.now();
     }
-    
+
     final updatedGoal = goal.copyWith(
       current: newCurrent,
       status: newStatus,
       completedDate: completedDate,
     );
 
+    // Insert goal entry to track this contribution
+    final now = DateTime.now();
+    await insertGoalEntry(
+      goalId: goalId,
+      amount: amount,
+      entryDate: now,
+      entryType: entryType,
+      note: note,
+    );
+
     return await updateGoal(updatedGoal);
+  }
+
+  // Goal entry operations
+  Future<int> insertGoalEntry({
+    required int goalId,
+    required double amount,
+    required DateTime entryDate,
+    required String entryType,
+    String? note,
+  }) async {
+    final db = await database;
+    return await db.insert('goal_entries', {
+      'goalId': goalId,
+      'amount': amount,
+      'entryDate': entryDate.millisecondsSinceEpoch,
+      'entryType': entryType,
+      'note': note,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getGoalEntries(int goalId, {DateTime? startDate, DateTime? endDate}) async {
+    final db = await database;
+    var query = 'SELECT * FROM goal_entries WHERE goalId = ?';
+    final List<dynamic> args = [goalId];
+
+    if (startDate != null) {
+      query += ' AND entryDate >= ?';
+      args.add(startDate.millisecondsSinceEpoch);
+    }
+    if (endDate != null) {
+      query += ' AND entryDate <= ?';
+      args.add(endDate.millisecondsSinceEpoch);
+    }
+
+    query += ' ORDER BY entryDate DESC';
+
+    return await db.rawQuery(query, args);
+  }
+
+  Future<int> deleteGoalEntry(int id) async {
+    final db = await database;
+    return await db.delete(
+      'goal_entries',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Goal notes operations
+  Future<int> insertGoalNote({
+    required int goalId,
+    required String content,
+  }) async {
+    final db = await database;
+    return await db.insert('goal_notes', {
+      'goalId': goalId,
+      'content': content,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getGoalNotes(int goalId) async {
+    final db = await database;
+    return await db.query(
+      'goal_notes',
+      where: 'goalId = ?',
+      whereArgs: [goalId],
+      orderBy: 'createdAt DESC',
+    );
+  }
+
+  Future<int> deleteGoalNote(int id) async {
+    final db = await database;
+    return await db.delete(
+      'goal_notes',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> updateGoalNote(int id, String content) async {
+    final db = await database;
+    return await db.update(
+      'goal_notes',
+      {'content': content},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }
 

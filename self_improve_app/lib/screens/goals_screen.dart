@@ -5,6 +5,7 @@ import '../bloc/goals/goals_event.dart';
 import '../bloc/goals/goals_state.dart';
 import '../widgets/goals/goal_card_widget.dart';
 import 'add_goal_screen.dart';
+import 'goal_detail_screen.dart';
 import '../widgets/app_drawer.dart';
 import '../models/goal.dart';
 
@@ -115,10 +116,14 @@ class _GoalsViewState extends State<_GoalsView> {
   }
 
   void _showViewDetails(Goal goal) {
-    // TODO: Implement view details
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Viewing details for "${goal.title}"')),
-    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => GoalDetailScreen(goal: goal),
+      ),
+    ).then((_) {
+      // Refresh goals when returning from detail screen
+      context.read<GoalsBloc>().add(const GoalsRefreshed());
+    });
   }
 
   void _handleAddContribution(Goal goal, double amount) {
@@ -182,6 +187,7 @@ class _GoalsViewState extends State<_GoalsView> {
 
   void _handleAddNote(Goal goal) {
     final TextEditingController noteController = TextEditingController();
+    final bloc = context.read<GoalsBloc>();
 
     showDialog(
       context: context,
@@ -205,7 +211,8 @@ class _GoalsViewState extends State<_GoalsView> {
           FilledButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              if (noteController.text.isNotEmpty) {
+              if (noteController.text.isNotEmpty && goal.id != null) {
+                bloc.add(GoalNoteAdded(goal.id!, noteController.text));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Note added for "${goal.title}"'),
@@ -223,6 +230,7 @@ class _GoalsViewState extends State<_GoalsView> {
 
   void _handleSkip(Goal goal) {
     final TextEditingController reasonController = TextEditingController();
+    final bloc = context.read<GoalsBloc>();
 
     showDialog(
       context: context,
@@ -253,6 +261,9 @@ class _GoalsViewState extends State<_GoalsView> {
           FilledButton(
             onPressed: () {
               Navigator.pop(dialogContext);
+              if (goal.id != null) {
+                bloc.add(GoalSkipped(goal.id!, reason: reasonController.text.isEmpty ? null : reasonController.text));
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Skipped "${goal.title}" for today'),
@@ -272,6 +283,7 @@ class _GoalsViewState extends State<_GoalsView> {
 
   void _handleFail(Goal goal) {
     final TextEditingController reasonController = TextEditingController();
+    final bloc = context.read<GoalsBloc>();
 
     showDialog(
       context: context,
@@ -309,6 +321,9 @@ class _GoalsViewState extends State<_GoalsView> {
           FilledButton(
             onPressed: () {
               Navigator.pop(dialogContext);
+              if (goal.id != null) {
+                bloc.add(GoalFailed(goal.id!, reason: reasonController.text.isEmpty ? null : reasonController.text));
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Failed attempt logged for "${goal.title}"'),

@@ -15,6 +15,9 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
     on<GoalDeleted>(_onGoalDeleted);
     on<ContributionAdded>(_onContributionAdded);
     on<GoalStatusChanged>(_onGoalStatusChanged);
+    on<GoalSkipped>(_onGoalSkipped);
+    on<GoalFailed>(_onGoalFailed);
+    on<GoalNoteAdded>(_onGoalNoteAdded);
   }
 
   Future<void> _onGoalsInitialized(
@@ -133,15 +136,15 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
         // Check if goal is being marked as completed
         final wasActive = goal.status == GoalStatus.active;
         final willBeCompleted = event.status == GoalStatus.completed;
-        
+
         final updatedGoal = goal.copyWith(
           status: event.status,
-          completedDate: event.status == GoalStatus.completed 
-              ? DateTime.now() 
+          completedDate: event.status == GoalStatus.completed
+              ? DateTime.now()
               : (event.status == GoalStatus.active ? null : goal.completedDate),
         );
         await _databaseService.updateGoal(updatedGoal);
-        
+
         // Show completion message if marking as done from active status
         if (wasActive && willBeCompleted) {
           emit(state.copyWith(
@@ -149,9 +152,60 @@ class GoalsBloc extends Bloc<GoalsEvent, GoalsState> {
             recentlyCompletedGoalId: updatedGoal.id,
           ));
         }
-        
+
         add(const GoalsRefreshed());
       }
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> _onGoalSkipped(
+    GoalSkipped event,
+    Emitter<GoalsState> emit,
+  ) async {
+    try {
+      await _databaseService.insertGoalEntry(
+        goalId: event.goalId,
+        amount: 0,
+        entryDate: DateTime.now(),
+        entryType: 'skipped',
+        note: event.reason,
+      );
+      add(const GoalsRefreshed());
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> _onGoalFailed(
+    GoalFailed event,
+    Emitter<GoalsState> emit,
+  ) async {
+    try {
+      await _databaseService.insertGoalEntry(
+        goalId: event.goalId,
+        amount: 0,
+        entryDate: DateTime.now(),
+        entryType: 'failed',
+        note: event.reason,
+      );
+      add(const GoalsRefreshed());
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> _onGoalNoteAdded(
+    GoalNoteAdded event,
+    Emitter<GoalsState> emit,
+  ) async {
+    try {
+      await _databaseService.insertGoalNote(
+        goalId: event.goalId,
+        content: event.note,
+      );
+      add(const GoalsRefreshed());
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
