@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permissions for app blocking functionality -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
     <application
         android:label="self_improve_app"
         android:name="${applicationName}"
