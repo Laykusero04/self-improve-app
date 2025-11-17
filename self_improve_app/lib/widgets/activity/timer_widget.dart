@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:app_settings/app_settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:self_improve_app/services/app_blocker_service.dart';
+import 'permissions_status_widget.dart';
 
 class TimerWidget extends StatefulWidget {
   const TimerWidget({super.key});
@@ -114,11 +115,14 @@ class _TimerWidgetState extends State<TimerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return SingleChildScrollView(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Permissions Status
+          const PermissionsStatusWidget(),
+
           // Circular Timer
+          const SizedBox(height: 32),
           CustomPaint(
             size: const Size(200, 200),
             painter: CircleTimerPainter(
@@ -197,15 +201,15 @@ class _TimerWidgetState extends State<TimerWidget> {
                     Switch(
                       value: _blockApps,
                       onChanged: _hasPermission
-                          ? (value) {
+                          ? (value) async {
                               setState(() {
                                 _blockApps = value;
-                                if (value) {
-                                  _appBlockerService.startBlocking();
-                                } else {
-                                  _appBlockerService.stopBlocking();
-                                }
                               });
+                              if (value) {
+                                _appBlockerService.startBlocking();
+                              } else {
+                                await _appBlockerService.stopBlocking();
+                              }
                             }
                           : null,
                     ),
