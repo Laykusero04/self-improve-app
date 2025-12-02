@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart' hide Transaction;
 import '../models/transaction.dart';
 import '../models/category.dart';
 import '../models/goal.dart';
+import '../models/focus_session.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -22,7 +23,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -183,6 +184,26 @@ class DatabaseService {
         print('Migration to version 6 completed with note: $e');
       }
     }
+    if (oldVersion < 7) {
+      // Create focus_sessions table
+      try {
+        await db.execute('''
+          CREATE TABLE focus_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            startTime INTEGER NOT NULL,
+            endTime INTEGER NOT NULL,
+            duration INTEGER NOT NULL,
+            category TEXT NOT NULL DEFAULT "Other",
+            date TEXT NOT NULL,
+            createdAt INTEGER NOT NULL
+          )
+        ''');
+        await db.execute('CREATE INDEX idx_focus_sessions_date ON focus_sessions(date)');
+        await db.execute('CREATE INDEX idx_focus_sessions_category ON focus_sessions(category)');
+      } catch (e) {
+        print('Migration to version 7 completed with note: $e');
+      }
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -267,6 +288,23 @@ class DatabaseService {
     await db.execute('CREATE INDEX idx_goal_entries_goalId ON goal_entries(goalId)');
     await db.execute('CREATE INDEX idx_goal_entries_entryDate ON goal_entries(entryDate)');
     await db.execute('CREATE INDEX idx_goal_notes_goalId ON goal_notes(goalId)');
+
+    // Create focus_sessions table
+    await db.execute('''
+      CREATE TABLE focus_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        startTime INTEGER NOT NULL,
+        endTime INTEGER NOT NULL,
+        duration INTEGER NOT NULL,
+        category TEXT NOT NULL DEFAULT "Other",
+        date TEXT NOT NULL,
+        createdAt INTEGER NOT NULL
+      )
+    ''');
+
+    // Create indexes for focus_sessions
+    await db.execute('CREATE INDEX idx_focus_sessions_date ON focus_sessions(date)');
+    await db.execute('CREATE INDEX idx_focus_sessions_category ON focus_sessions(category)');
 
     // Insert default categories
     await _insertDefaultCategories(db);
@@ -604,6 +642,138 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // Focus Session CRUD operations
+  Future<int> insertFocusSession(FocusSession session) async {
+    try {
+      final db = await database;
+      return await db.insert('focus_sessions', session.toMap());
+    } catch (e) {
+      print('Error inserting focus session: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<FocusSession>> getFocusSessions({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? category,
+    String? date,
+  }) async {
+    try {
+      final db = await database;
+      var query = 'SELECT * FROM focus_sessions WHERE 1=1';
+      final List<dynamic> args = [];
+
+      if (startDate != null) {
+        query += ' AND startTime >= ?';
+        args.add(startDate.millisecondsSinceEpoch);
+      }
+      if (endDate != null) {
+        query += ' AND endTime <= ?';
+        args.add(endDate.millisecondsSinceEpoch);
+      }
+      if (category != null) {
+        query += ' AND category = ?';
+        args.add(category);
+      }
+      if (date != null) {
+        query += ' AND date = ?';
+        args.add(date);
+      }
+
+      query += ' ORDER BY startTime DESC';
+
+      final List<Map<String, dynamic>> maps = await db.rawQuery(query, args);
+      return maps.map((map) => FocusSession.fromMap(map)).toList();
+    } catch (e) {
+      print('Error getting focus sessions: $e');
+      return [];
+    }
+  }
+
+  Future<FocusSession?> getFocusSession(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'focus_sessions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return FocusSession.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<int> deleteFocusSession(int id) async {
+    final db = await database;
+    return await db.delete(
+      'focus_sessions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Get total duration for a specific date
+  Future<int> getTotalDurationForDate(String date) async {
+    try {
+      final db = await database;
+      final result = await db.rawQuery(
+        'SELECT SUM(duration) as total FROM focus_sessions WHERE date = ?',
+        [date],
+      );
+      if (result.isEmpty) return 0;
+      return (result.first['total'] as int?) ?? 0;
+    } catch (e) {
+      print('Error getting total duration for date: $e');
+      return 0;
+    }
+  }
+
+  // Get total duration for date range
+  Future<int> getTotalDurationForRange(DateTime startDate, DateTime endDate) async {
+    try {
+      final db = await database;
+      final result = await db.rawQuery(
+        'SELECT SUM(duration) as total FROM focus_sessions WHERE startTime >= ? AND endTime <= ?',
+        [startDate.millisecondsSinceEpoch, endDate.millisecondsSinceEpoch],
+      );
+      if (result.isEmpty) return 0;
+      return (result.first['total'] as int?) ?? 0;
+    } catch (e) {
+      print('Error getting total duration for range: $e');
+      return 0;
+    }
+  }
+
+  // Get category totals for a date range
+  Future<Map<String, int>> getCategoryTotalsForRange(DateTime startDate, DateTime endDate) async {
+    final sessions = await getFocusSessions(startDate: startDate, endDate: endDate);
+    final Map<String, int> totals = {};
+    for (final session in sessions) {
+      totals[session.category] = (totals[session.category] ?? 0) + session.duration;
+    }
+    return totals;
+  }
+
+  // Get daily totals for a week
+  Future<Map<String, int>> getWeeklyTotals(DateTime weekStart) async {
+    try {
+      final weekEnd = weekStart.add(const Duration(days: 7));
+      final sessions = await getFocusSessions(startDate: weekStart, endDate: weekEnd);
+      
+      final Map<String, int> dailyTotals = {};
+      for (final session in sessions) {
+        dailyTotals[session.date] = (dailyTotals[session.date] ?? 0) + session.duration;
+      }
+      
+      return dailyTotals;
+    } catch (e) {
+      print('Error getting weekly totals: $e');
+      return {};
+    }
   }
 }
 

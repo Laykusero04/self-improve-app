@@ -4,10 +4,14 @@ import 'dart:math' as math;
 import 'package:app_settings/app_settings.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:self_improve_app/services/app_blocker_service.dart';
+import 'package:self_improve_app/services/database_service.dart';
+import 'package:self_improve_app/models/focus_session.dart';
 import 'permissions_status_widget.dart';
 
 class TimerWidget extends StatefulWidget {
-  const TimerWidget({super.key});
+  final VoidCallback? onSessionSaved;
+  
+  const TimerWidget({super.key, this.onSessionSaved});
 
   @override
   State<TimerWidget> createState() => _TimerWidgetState();
@@ -15,12 +19,13 @@ class TimerWidget extends StatefulWidget {
 
 class _TimerWidgetState extends State<TimerWidget> {
   bool _isRunning = false;
-  bool _isPaused = false;
   int _seconds = 0;
+  DateTime? _startTime;
   Timer? _timer;
   bool _blockApps = false;
   bool _hasPermission = false;
   final _appBlockerService = AppBlockerService();
+  final _databaseService = DatabaseService.instance;
 
   @override
   void initState() {
@@ -81,7 +86,7 @@ class _TimerWidgetState extends State<TimerWidget> {
   void _startTimer() {
     setState(() {
       _isRunning = true;
-      _isPaused = false;
+      _startTime = DateTime.now();
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
@@ -90,20 +95,105 @@ class _TimerWidgetState extends State<TimerWidget> {
     });
   }
 
-  void _pauseTimer() {
-    setState(() {
-      _isPaused = true;
-    });
+  Future<void> _stopTimer() async {
     _timer?.cancel();
-  }
-
-  void _stopTimer() {
-    _timer?.cancel();
+    
+    // Stop app blocking if it was enabled
+    if (_blockApps) {
+      await _appBlockerService.stopBlocking();
+      setState(() {
+        _blockApps = false;
+      });
+    }
+    
+    if (_seconds > 0 && _startTime != null) {
+      // Show save dialog
+      final shouldSave = await _showSaveDialog();
+      if (shouldSave == true) {
+        // Session will be saved in the dialog
+      }
+    }
+    
     setState(() {
       _isRunning = false;
-      _isPaused = false;
       _seconds = 0;
+      _startTime = null;
     });
+  }
+
+  Future<bool?> _showSaveDialog() async {
+    String selectedCategory = 'Work';
+    final categories = ['Work', 'Study', 'Exercise', 'Reading', 'Other'];
+    
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Save Focus Session?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Duration: ${_formatTime(_seconds)}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                const Text('Category:'),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  items: categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() {
+                        selectedCategory = value;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  if (_startTime != null) {
+                    final endTime = DateTime.now();
+                    final date = DateTime.now();
+                    final dateString = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    
+                    final session = FocusSession(
+                      startTime: _startTime!,
+                      endTime: endTime,
+                      duration: _seconds,
+                      category: selectedCategory,
+                      date: dateString,
+                      createdAt: DateTime.now(),
+                    );
+                    
+                    await _databaseService.insertFocusSession(session);
+                    // Notify parent to refresh
+                    widget.onSessionSaved?.call();
+                  }
+                  Navigator.pop(context, true);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   String _formatTime(int seconds) {
@@ -149,21 +239,14 @@ class _TimerWidgetState extends State<TimerWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (!_isRunning || _isPaused)
+              if (!_isRunning)
                 IconButton.filled(
                   onPressed: _startTimer,
                   icon: const Icon(Icons.play_arrow),
                   iconSize: 32,
                   padding: const EdgeInsets.all(16),
                 ),
-              if (_isRunning && !_isPaused)
-                IconButton.filled(
-                  onPressed: _pauseTimer,
-                  icon: const Icon(Icons.pause),
-                  iconSize: 32,
-                  padding: const EdgeInsets.all(16),
-                ),
-              if (_isRunning || _isPaused) ...[
+              if (_isRunning) ...[
                 const SizedBox(width: 16),
                 IconButton.outlined(
                   onPressed: _stopTimer,
