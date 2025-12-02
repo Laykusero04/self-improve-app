@@ -1,5 +1,6 @@
 package com.example.self_improve_app
 
+import android.app.ActivityManager
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
@@ -16,6 +17,7 @@ import android.widget.TextView
 class BlockOverlayService : Service() {
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    private var blockedPackageName: String? = null
     private val TAG = "BlockOverlayService"
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -23,18 +25,19 @@ class BlockOverlayService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val packageName = intent?.getStringExtra("packageName") ?: "Unknown App"
-        Log.d(TAG, "Blocking app: $packageName")
+        blockedPackageName = intent?.getStringExtra("packageName") ?: "Unknown App"
+        Log.d(TAG, "Blocking app: $blockedPackageName")
 
-        // Only show overlay if not already showing
+        // Always show/update overlay when requested
         if (overlayView == null) {
             Log.d(TAG, "Showing blocking overlay")
-            showOverlay(packageName)
+            showOverlay(blockedPackageName!!)
         } else {
-            Log.d(TAG, "Overlay already showing")
+            // Update existing overlay with new package name
+            Log.d(TAG, "Updating existing overlay")
+            updateOverlay(blockedPackageName!!)
         }
 
-        // Don't auto-hide - let user dismiss manually
         return START_STICKY
     }
 
@@ -54,10 +57,9 @@ class BlockOverlayService : Service() {
             } else {
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            // Make overlay focusable and block touches to underlying app
+            // Block all touches to underlying app - removed FLAG_NOT_TOUCH_MODAL
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
 
@@ -66,28 +68,18 @@ class BlockOverlayService : Service() {
         // Add the view to the window
         windowManager?.addView(overlayView, params)
 
-        // Set up close button - just hide overlay, DON'T stop service
+        // Set up close button - force close app and hide overlay
         overlayView?.findViewById<Button>(R.id.btn_close)?.setOnClickListener {
-            Log.d(TAG, "Close button clicked - hiding overlay but keeping service alive")
-            removeOverlay()
-            // Go to home screen
-            val homeIntent = Intent(Intent.ACTION_MAIN)
-            homeIntent.addCategory(Intent.CATEGORY_HOME)
-            homeIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(homeIntent)
-            // DON'T call stopSelf() - let Flutter manage the service lifecycle
+            Log.d(TAG, "Close button clicked - force closing app and hiding overlay")
+            blockedPackageName?.let { forceCloseApp(it) }
+            dismissOverlay()
         }
 
-        // Set up go back button - returns to home screen
+        // Set up go back button - force close app and return to home screen
         overlayView?.findViewById<Button>(R.id.btn_go_back)?.setOnClickListener {
-            Log.d(TAG, "Go back button clicked - hiding overlay but keeping service alive")
-            removeOverlay()
-            // Go to home screen
-            val homeIntent = Intent(Intent.ACTION_MAIN)
-            homeIntent.addCategory(Intent.CATEGORY_HOME)
-            homeIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(homeIntent)
-            // DON'T call stopSelf() - let Flutter manage the service lifecycle
+            Log.d(TAG, "Go back button clicked - force closing app and hiding overlay")
+            blockedPackageName?.let { forceCloseApp(it) }
+            dismissOverlay()
         }
 
         // Display app name
@@ -97,12 +89,39 @@ class BlockOverlayService : Service() {
         Log.d(TAG, "Overlay displayed successfully")
     }
 
+    private fun updateOverlay(packageName: String) {
+        overlayView?.findViewById<TextView>(R.id.tv_app_name)?.text =
+            "This app is blocked during focus time"
+        blockedPackageName = packageName
+    }
+
+    private fun forceCloseApp(packageName: String) {
+        try {
+            val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+            activityManager.killBackgroundProcesses(packageName)
+            Log.d(TAG, "Force closed app: $packageName")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error force closing app: $e")
+        }
+    }
+
     private fun removeOverlay() {
         if (overlayView != null) {
             Log.d(TAG, "Removing overlay")
             windowManager?.removeView(overlayView)
             overlayView = null
         }
+    }
+
+    private fun dismissOverlay() {
+        removeOverlay()
+        // Notify Flutter that overlay was dismissed
+        MainActivity.notifyOverlayDismissed()
+        // Go to home screen
+        val homeIntent = Intent(Intent.ACTION_MAIN)
+        homeIntent.addCategory(Intent.CATEGORY_HOME)
+        homeIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(homeIntent)
     }
 
     override fun onDestroy() {
